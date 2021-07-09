@@ -12,12 +12,12 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/drone-runners/drone-runner-docker/earthfile2llb"
 	"github.com/earthly/earthly/buildcontext"
 	"github.com/earthly/earthly/buildcontext/provider"
 	"github.com/earthly/earthly/cleanup"
 	"github.com/earthly/earthly/conslogging"
 	"github.com/earthly/earthly/domain"
-	"github.com/earthly/earthly/earthfile2llb"
 	"github.com/earthly/earthly/states"
 	"github.com/earthly/earthly/util/llbutil"
 	"github.com/earthly/earthly/util/llbutil/pllb"

@@ -3,6 +3,15 @@ package earthfile2llb
 import (
 	"context"
 	"fmt"
+	"github.com/drone-runners/drone-runner-docker/engine"
+	"github.com/drone-runners/drone-runner-docker/engine/compiler"
+	"github.com/drone-runners/drone-runner-docker/engine/resource"
+	"github.com/drone/drone-go/drone"
+	"github.com/drone/runner-go/environ/provider"
+	"github.com/drone/runner-go/manifest"
+	"github.com/drone/runner-go/pipeline/runtime"
+	"github.com/drone/runner-go/registry"
+	"github.com/drone/runner-go/secret"
 	"os"
 	"path/filepath"
 	"strings"
@@ -104,20 +113,22 @@ func (i *Interpreter) handleTarget(ctx context.Context, t spec.Target) error {
 }
 
 func (i *Interpreter) handleBlock(ctx context.Context, b spec.Block) error {
-	prevWasArg := true // not exactly true, but makes the logic easier
-	for index, stmt := range b {
-		if i.parallelConversion && prevWasArg {
-			err := i.handleBlockParallel(ctx, b, index)
-			if err != nil {
-				return err
-			}
-		}
-		err := i.handleStatement(ctx, stmt)
-		if err != nil {
-			return err
-		}
-		prevWasArg = (stmt.Command != nil && stmt.Command.Name == "ARG")
-	}
+	//prevWasArg := true // not exactly true, but makes the logic easier
+	//for index, stmt := range b {
+	//	if i.parallelConversion && prevWasArg {
+	//		err := i.handleBlockParallel(ctx, b, index)
+	//		if err != nil {
+	//			return err
+	//		}
+	//	}
+	//	err := i.handleStatement(ctx, stmt)
+	//	if err != nil {
+	//		return err
+	//	}
+	//	prevWasArg = (stmt.Command != nil && stmt.Command.Name == "ARG")
+	//}
+
+	i.handleDrone(ctx)
 	return nil
 }
 
@@ -166,6 +177,62 @@ func (i *Interpreter) handleStatement(ctx context.Context, stmt spec.Statement) 
 	} else {
 		return i.errorf(stmt.SourceLocation, "unexpected statement type")
 	}
+}
+
+func (i *Interpreter) handleDrone(ctx context.Context) error {
+	com := testCompile("engine/compiler/testdata/serial.yml")
+	//print(com)
+	imageCmd := spec.Command{Name: "FROM", Args: []string{com.Steps[1].Image}}
+	workDirCmd := spec.Command{Name: "WORKDIR", Args: []string{com.Steps[1].WorkingDir}}
+	runCmd := spec.Command{Name: "WORKDIR", Args: []string{com.Steps[1].WorkingDir}}
+	//cmd2 := spec.Command{Name: "CMD", Args: []string{"ls"} }// com.Steps[1].Command
+	//cmd3 := spec.Command{Name: "RUN", Args: []string{"go", "mod",  "download"} }
+	//cmd4 := spec.Command{Name: "RUN", Args: []string{"go mod download"} }
+	//cmd5 := spec.Command{Name: "RUN", Args: []string{"echo ls | /bin/sh"} }
+	//cmd3 := spec.Command{Name: "CMD", Args: com.Steps[1].Command }
+
+	cmds := []spec.Command{imageCmd, workDirCmd, runCmd}
+
+	//for key, value := range com.Steps[1].Envs {
+	//	i.converter.Env(ctx, key, value)
+	//}
+
+	for _, element := range cmds {
+		i.handleCommand(ctx, element)
+		// element is the element from someSlice for where we are
+	}
+	return nil
+}
+
+func testCompile(source string) *engine.Spec {
+	manifest, _ := manifest.ParseFile(source)
+
+	compiler := &compiler.Compiler{
+		Environ:  provider.Static(nil),
+		Registry: registry.Static(nil),
+		Secret: secret.StaticVars(map[string]string{
+			"token":       "3DA541559918A808C2402BBA5012F6C60B27661C",
+			"password":    "password",
+			"my_username": "octocat",
+		}),
+	}
+	args := runtime.CompilerArgs{
+		Repo:     &drone.Repo{},
+		Build:    &drone.Build{Target: "master"},
+		Stage:    &drone.Stage{},
+		System:   &drone.System{},
+		Netrc:    &drone.Netrc{Machine: "github.com", Login: "octocat", Password: "correct-horse-battery-staple"},
+		Manifest: manifest,
+		Pipeline: manifest.Resources[0].(*resource.Pipeline),
+		Secret:   secret.Static(nil),
+	}
+	var nocontext = context.Background()
+	got := compiler.Compile(nocontext, args)
+	bb := got.(*engine.Spec)
+
+	config := engine.ToConfig(bb, bb.Steps[1])
+	fmt.Print(config)
+	return got.(*engine.Spec)
 }
 
 // 处理具体命令
@@ -961,6 +1028,14 @@ func (i *Interpreter) handleVolume(ctx context.Context, cmd spec.Command) error 
 	}
 	return nil
 }
+
+//func (i *Interpreter) handleEnvs(ctx context.Context) error {
+//	for key, value := range com.Steps[1].Envs {
+//		i.converter.Env(ctx, key, value)
+//	}
+//
+//	return nil
+//}
 
 func (i *Interpreter) handleEnv(ctx context.Context, cmd spec.Command) error {
 	if i.pushOnlyAllowed {

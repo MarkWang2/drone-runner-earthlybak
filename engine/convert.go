@@ -13,6 +13,41 @@ import (
 )
 
 // returns a container configuration.
+func ToConfig(spec *Spec, step *Step) *container.Config {
+	config := &container.Config{
+		Image:        step.Image,
+		Labels:       step.Labels,
+		WorkingDir:   step.WorkingDir,
+		User:         step.User,
+		AttachStdin:  false,
+		AttachStdout: true,
+		AttachStderr: true,
+		Tty:          false,
+		OpenStdin:    false,
+		StdinOnce:    false,
+		ArgsEscaped:  false,
+	}
+
+	if len(step.Envs) != 0 {
+		config.Env = toEnv(step.Envs)
+	}
+	for _, sec := range step.Secrets {
+		config.Env = append(config.Env, sec.Env+"="+string(sec.Data))
+	}
+
+	if len(step.Entrypoint) != 0 {
+		config.Entrypoint = step.Entrypoint
+	}
+	if len(step.Command) != 0 {
+		config.Cmd = step.Command
+	}
+	if len(step.Volumes) != 0 {
+		config.Volumes = toVolumeSet(spec, step)
+	}
+	return config
+}
+
+// returns a container configuration.
 func toConfig(spec *Spec, step *Step) *container.Config {
 	config := &container.Config{
 		Image:        step.Image,
