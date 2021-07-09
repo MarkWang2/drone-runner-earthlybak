@@ -15,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/earthly/earthly/buildcontext"
+	"github.com/drone-runners/drone-runner-docker/buildcontext"
 	"github.com/earthly/earthly/debugger/common"
 	"github.com/earthly/earthly/domain"
 	"github.com/earthly/earthly/states"

@@ -12,9 +12,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/drone-runners/drone-runner-docker/buildcontext"
+	"github.com/drone-runners/drone-runner-docker/buildcontext/provider"
 	"github.com/drone-runners/drone-runner-docker/earthfile2llb"
-	"github.com/earthly/earthly/buildcontext"
-	"github.com/earthly/earthly/buildcontext/provider"
 	"github.com/earthly/earthly/cleanup"
 	"github.com/earthly/earthly/conslogging"
 	"github.com/earthly/earthly/domain"

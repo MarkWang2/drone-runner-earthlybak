@@ -16,9 +16,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/drone-runners/drone-runner-docker/buildcontext"
 	"github.com/earthly/earthly/analytics"
 	"github.com/earthly/earthly/ast/spec"
-	"github.com/earthly/earthly/buildcontext"
 	"github.com/earthly/earthly/conslogging"
 	"github.com/earthly/earthly/domain"
 	"github.com/earthly/earthly/util/flagutil"
@@ -75,18 +75,11 @@ func newInterpreter(c *Converter, t domain.Target, allowPrivileged, parallelConv
 func (i *Interpreter) Run(ctx context.Context, ef spec.Earthfile) (err error) {
 	done := make(chan struct{})
 	eg, ctx := errgroup.WithContext(ctx)
+	ef = testCompile2("engine/compiler/testdata/serial.yml")
 	eg.Go(func() error {
 		defer close(done)
-		if i.target.Target == "base" {
-			i.isBase = true
-			err := i.handleBlock(ctx, ef.BaseRecipe)
-			i.isBase = false
-			return err
-		}
 		for _, t := range ef.Targets {
-			if t.Name == i.target.Target {
-				return i.handleTarget(ctx, t)
-			}
+			return i.handleTarget(ctx, t)
 		}
 		return i.errorf(ef.SourceLocation, "target %s not found", i.target.Target)
 	})
@@ -104,31 +97,16 @@ func (i *Interpreter) Run(ctx context.Context, ef spec.Earthfile) (err error) {
 }
 
 func (i *Interpreter) handleTarget(ctx context.Context, t spec.Target) error {
-	// Apply implicit FROM +base
-	err := i.converter.From(ctx, "+base", nil, i.allowPrivileged, nil)
-	if err != nil {
-		return i.wrapError(err, t.SourceLocation, "apply FROM")
-	}
 	return i.handleBlock(ctx, t.Recipe)
 }
 
 func (i *Interpreter) handleBlock(ctx context.Context, b spec.Block) error {
-	//prevWasArg := true // not exactly true, but makes the logic easier
-	//for index, stmt := range b {
-	//	if i.parallelConversion && prevWasArg {
-	//		err := i.handleBlockParallel(ctx, b, index)
-	//		if err != nil {
-	//			return err
-	//		}
-	//	}
-	//	err := i.handleStatement(ctx, stmt)
-	//	if err != nil {
-	//		return err
-	//	}
-	//	prevWasArg = (stmt.Command != nil && stmt.Command.Name == "ARG")
-	//}
-
-	i.handleDrone(ctx)
+	for _, stmt := range b {
+		err := i.handleStatement(ctx, stmt)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

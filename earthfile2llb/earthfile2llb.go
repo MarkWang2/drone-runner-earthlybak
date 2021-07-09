@@ -10,9 +10,9 @@ import (
 	"github.com/pkg/errors"
 	"golang.org/x/sync/semaphore"
 
+	"github.com/drone-runners/drone-runner-docker/buildcontext"
+	"github.com/drone-runners/drone-runner-docker/buildcontext/provider"
 	"github.com/earthly/earthly/ast"
-	"github.com/earthly/earthly/buildcontext"
-	"github.com/earthly/earthly/buildcontext/provider"
 	"github.com/earthly/earthly/cleanup"
 	"github.com/earthly/earthly/conslogging"
 	"github.com/earthly/earthly/domain"
