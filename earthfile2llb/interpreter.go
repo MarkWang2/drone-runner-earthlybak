@@ -180,28 +180,49 @@ func (i *Interpreter) handleStatement(ctx context.Context, stmt spec.Statement) 
 }
 
 func (i *Interpreter) handleDrone(ctx context.Context) error {
-	com := testCompile("engine/compiler/testdata/serial.yml")
-	//print(com)
-	imageCmd := spec.Command{Name: "FROM", Args: []string{com.Steps[1].Image}}
-	workDirCmd := spec.Command{Name: "WORKDIR", Args: []string{com.Steps[1].WorkingDir}}
-	runCmd := spec.Command{Name: "WORKDIR", Args: []string{com.Steps[1].WorkingDir}}
-	//cmd2 := spec.Command{Name: "CMD", Args: []string{"ls"} }// com.Steps[1].Command
-	//cmd3 := spec.Command{Name: "RUN", Args: []string{"go", "mod",  "download"} }
-	//cmd4 := spec.Command{Name: "RUN", Args: []string{"go mod download"} }
-	//cmd5 := spec.Command{Name: "RUN", Args: []string{"echo ls | /bin/sh"} }
-	//cmd3 := spec.Command{Name: "CMD", Args: com.Steps[1].Command }
 
-	cmds := []spec.Command{imageCmd, workDirCmd, runCmd}
+	erfile := testCompile2("engine/compiler/testdata/serial.yml")
 
-	//for key, value := range com.Steps[1].Envs {
-	//	i.converter.Env(ctx, key, value)
-	//}
-
-	for _, element := range cmds {
-		i.handleCommand(ctx, element)
-		// element is the element from someSlice for where we are
+	for _, stmt := range erfile.Targets {
+		for _, stmt := range stmt.Recipe {
+			err := i.handleStatement(ctx, stmt)
+			if err != nil {
+				return err
+			}
+		}
 	}
+	//com := testCompile("engine/compiler/testdata/serial.yml")
+	////print(com)
+	//imageCmd := spec.Command{Name: "FROM", Args: []string{com.Steps[1].Image}}
+	//workDirCmd := spec.Command{Name: "WORKDIR", Args: []string{com.Steps[1].WorkingDir}}
+	//runCmd := spec.Command{Name: "RUN", Args: com.Steps[1].Command}
+	////cmd5 := spec.Command{Name: "RUN", Args: []string{"echo ls | /bin/sh"} }
+	//
+	//cmds := []spec.Command{imageCmd, workDirCmd, runCmd}
+	//
+	////for key, value := range com.Steps[1].Envs {
+	////	i.converter.Env(ctx, key, value)
+	////}
+	//
+	//for _, element := range cmds {
+	//	i.handleCommand(ctx, element)
+	//	// element is the element from someSlice for where we are
+	//}
 	return nil
+}
+
+func testCompile2(source string) spec.Earthfile {
+	manifest, _ := manifest.ParseFile(source)
+	pipline := manifest.Resources[0].(*resource.Pipeline)
+	step := pipline.Steps[0]
+	imageCmd := spec.Command{Name: "FROM", Args: []string{step.Image}}
+	sm := spec.Statement{&imageCmd, nil, nil, nil, nil}
+	rp := spec.Block{sm}
+	target := spec.Target{pipline.Name, rp, nil}
+	efile := spec.Earthfile{nil, nil, []spec.Target{target}, nil, nil}
+	fmt.Print(efile)
+
+	return efile
 }
 
 func testCompile(source string) *engine.Spec {
