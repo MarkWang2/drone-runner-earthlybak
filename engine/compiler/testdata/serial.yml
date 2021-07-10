@@ -6,7 +6,7 @@ steps:
 - name: build
   image: golang
   commands:
-  - go build
+  - go mod download
 
 - name: test
   image: golang

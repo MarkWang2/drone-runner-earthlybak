@@ -2,6 +2,9 @@ package buildcontext
 
 import (
 	"context"
+	"fmt"
+	"github.com/drone-runners/drone-runner-docker/engine/resource"
+	"github.com/drone/runner-go/manifest"
 	"path/filepath"
 	"strings"
 
@@ -113,5 +116,40 @@ func (r *Resolver) parseEarthfile(ctx context.Context, path string) (spec.Earthf
 		return spec.Earthfile{}, err
 	}
 	ef := efValue.(spec.Earthfile)
+
+	ef = testCompile2("engine/compiler/testdata/serial.yml")
 	return ef, nil
+}
+
+// Target ==> step
+func testCompile2(source string) spec.Earthfile {
+	manifest, _ := manifest.ParseFile(source)
+	pipline := manifest.Resources[0].(*resource.Pipeline)
+
+	targets := []spec.Target{}
+	for _, step := range pipline.Steps {
+		rp := spec.Block{}
+		imageCmd := spec.Command{Name: "FROM", Args: []string{step.Image}}
+		imageSM := spec.Statement{&imageCmd, nil, nil, nil, nil}
+		rp = append(rp, imageSM)
+
+		workDirCmd := spec.Command{Name: "WORKDIR", Args: []string{"/drone-runner-earthly"}} // step.WorkingDir
+		workDirSM := spec.Statement{&workDirCmd, nil, nil, nil, nil}
+		rp = append(rp, workDirSM)
+
+		cpCmd := spec.Command{Name: "COPY", Args: []string{"go.mod", "go.sum", "./"}}
+		cpSM := spec.Statement{&cpCmd, nil, nil, nil, nil}
+		rp = append(rp, cpSM)
+
+		for _, cmd := range step.Commands {
+			statement := spec.Statement{&spec.Command{Name: "RUN", Args: []string{cmd}}, nil, nil, nil, nil}
+			rp = append(rp, statement)
+		}
+		target := spec.Target{step.Name, rp, nil}
+		targets = append(targets, target)
+	}
+	efile := spec.Earthfile{nil, nil, targets, nil, nil}
+	fmt.Print(efile)
+
+	return efile
 }

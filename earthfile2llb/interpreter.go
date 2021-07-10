@@ -75,7 +75,7 @@ func newInterpreter(c *Converter, t domain.Target, allowPrivileged, parallelConv
 func (i *Interpreter) Run(ctx context.Context, ef spec.Earthfile) (err error) {
 	done := make(chan struct{})
 	eg, ctx := errgroup.WithContext(ctx)
-	ef = testCompile2("engine/compiler/testdata/serial.yml")
+	//ef = testCompile2("engine/compiler/testdata/serial.yml")
 	eg.Go(func() error {
 		defer close(done)
 		for _, t := range ef.Targets {
