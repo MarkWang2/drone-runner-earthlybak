@@ -117,12 +117,12 @@ func (r *Resolver) parseEarthfile(ctx context.Context, path string) (spec.Earthf
 	}
 	ef := efValue.(spec.Earthfile)
 
-	ef = testCompile2("engine/compiler/testdata/serial.yml")
+	ef = parseDronefile("engine/compiler/testdata/serial.yml")
 	return ef, nil
 }
 
 // Target ==> step
-func testCompile2(source string) spec.Earthfile {
+func parseDronefile(source string) spec.Earthfile {
 	manifest, _ := manifest.ParseFile(source)
 	pipline := manifest.Resources[0].(*resource.Pipeline)
 
@@ -137,6 +137,7 @@ func testCompile2(source string) spec.Earthfile {
 		workDirSM := spec.Statement{&workDirCmd, nil, nil, nil, nil}
 		rp = append(rp, workDirSM)
 
+		// done yaml add copy make drone use as dockerfile way.
 		cpCmd := spec.Command{Name: "COPY", Args: []string{"go.mod", "go.sum", "./"}}
 		cpSM := spec.Statement{&cpCmd, nil, nil, nil, nil}
 		rp = append(rp, cpSM)

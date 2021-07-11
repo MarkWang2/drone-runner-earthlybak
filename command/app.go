@@ -1,4 +1,4 @@
-package main
+package command
 
 import (
 	"bufio"
@@ -231,7 +231,7 @@ func RunApp() {
 	app.autoComplete()
 	//os.Args = []string{"say", "hi", "english", "--name", "Jeremy"}
 	os.Args = []string{"+build", "--buildkit-image", "earthly/buildkitd:main"}
-	exitCode := app.run(ctx, os.Args)
+	exitCode := app.run(ctx, []string{"+build", "--buildkit-image", "earthly/buildkitd:main"})
 	// app.cfg will be nil when a user runs `earthly --version`;
 	// however in all other regular commands app.cfg will be set in app.Before
 	if !app.disableAnalytics && app.cfg != nil && !app.cfg.Global.DisableAnalytics {
@@ -2553,12 +2553,12 @@ func (app *earthlyApp) actionBuild(c *cli.Context) error {
 		}
 	}
 
-	flagArgs, nonFlagArgs, err := variables.ParseFlagArgsWithNonFlags(c.Args().Slice())
+	flagArgs, _, err := variables.ParseFlagArgsWithNonFlags(c.Args().Slice())
 	if err != nil {
 		return errors.Wrapf(err, "parse args %s", strings.Join(c.Args().Slice(), " "))
 	}
 
-	return app.actionBuildImp(c, flagArgs, nonFlagArgs)
+	return app.actionBuildImp(c, flagArgs, []string{"+build"})
 }
 
 // warnIfArgContainsBuildArg will issue a warning if a flag is incorrectly prefixed with build-arg.
