@@ -1,0 +1,103 @@
+#!/bin/bash
+set -e
+
+bindir="$HOME/.earthly"
+if [ ! -d "$bindir" ]; then
+  mkdir -p "$bindir"
+fi
+
+scriptname=$(basename "$0")
+
+last_check_state_path=/tmp/last-earthly-prerelease-check
+
+get_latest_binary() {
+    docker rm --force earthly_binary 2>/dev/null || true
+
+    docker pull earthly/earthlybinaries:prerelease
+    docker create --name earthly_binary earthly/earthlybinaries:prerelease
+
+    earth_bin_path=/earthly-linux-amd64
+    bk_platform=linux/amd64
+    if [ "$(uname)" == "Darwin" ]; then
+        if [ "$(uname -m)" == "arm64" ]; then
+            earth_bin_path=/earthly-darwin-arm64
+            bk_platform=linux/arm64
+        else
+            earth_bin_path=/earthly-darwin-amd64
+        fi
+    fi
+
+    docker pull --platform="$bk_platform" earthly/buildkitd:prerelease
+    docker cp earthly_binary:"$earth_bin_path" "$bindir/earthly-prerelease"
+    docker rm earthly_binary
+}
+
+do_reset() {
+    rm -f "$last_check_state_path"
+    docker stop earthly-buildkitd || true
+    docker rm -f earthly-buildkitd || true
+    rm -f "$bindir/earthly-prerelease"
+    docker rm --force earthly_binary 2>/dev/null || true
+    docker rmi -f earthly/buildkitd:prerelease || true
+    docker rmi -f earthly/earthlybinaries:prerelease || true
+}
+
+
+do_upgrade() {
+    do_reset
+    get_latest_binary
+}
+
+do_help() {
+    if ! command -v "$bindir/earthly-prerelease"; then
+        get_latest_binary
+    fi
+
+    echo "------------------- earthly pre-release script help -------------------"
+    echo "NAME:"
+    echo "   $scriptname - A wrapper around the earthly binary that checks for updates once an hour"
+    echo ""
+    echo "COMMANDS:"
+    echo "   reset     Removes prerelease binary and associated docker containers"
+    echo "   upgrade   Forces a new check for the latest version"
+    echo ""
+    echo ""
+    echo "---------------------------- earthly help -----------------------------"
+    exec -a "$scriptname" "$bindir/earthly-prerelease" --help
+}
+
+case "$1" in
+    reset)
+        do_reset
+        ;;
+
+    upgrade)
+        do_upgrade
+        ;;
+
+    -h)
+        do_help
+        ;; # using a ;& fallthrough won't work on macOS
+    --help)
+        do_help
+        ;;
+    
+    *)
+        last=$(cat "$last_check_state_path" 2>/dev/null || echo 0)
+        now=$(date +%s)
+        since=$(( now - last ))
+
+        if [ "$since" -ge 3600 ] && [ -z "$COMP_LINE" ]; then
+            echo checking for latest earthly pre-release binaries
+            get_latest_binary
+            echo "Updated prerelease binary. Version:"
+            "$bindir/earthly-prerelease" --version
+            echo "$now" >"$last_check_state_path"
+        fi
+
+        export EARTHLY_CONVERSION_PARALLELISM=5
+        # enable local registry-based exports
+        "$bindir/earthly-prerelease" config global.local_registry_host 'tcp://127.0.0.1:8371' || true
+        exec -a "$scriptname" "$bindir/earthly-prerelease" "$@"
+        ;;
+esac

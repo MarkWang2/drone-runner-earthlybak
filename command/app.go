@@ -52,6 +52,7 @@ import (
 	"github.com/drone-runners/drone-runner-docker/buildcontext/provider"
 	"github.com/drone-runners/drone-runner-docker/builder"
 	"github.com/drone-runners/drone-runner-docker/earthfile2llb"
+	"github.com/drone-runners/drone-runner-docker/engine"
 	"github.com/earthly/earthly/analytics"
 	"github.com/earthly/earthly/ast"
 	"github.com/earthly/earthly/autocomplete"
@@ -80,6 +81,9 @@ type earthlyApp struct {
 	cfg         *config.Config
 	sessionID   string
 	commandName string
+	test        string
+	spec        engine.Spec
+	step        engine.Step
 	cliFlags
 }
 
@@ -159,7 +163,7 @@ func profhandler() {
 	http.ListenAndServe(addr, nil)
 }
 
-func RunApp() {
+func RunApp(spec *engine.Spec, step *engine.Step) {
 	startTime := time.Now()
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
@@ -229,9 +233,10 @@ func RunApp() {
 
 	app := newEarthlyApp(ctx, conslogging.Current(colorMode, padding, false))
 	app.autoComplete()
-	//os.Args = []string{"say", "hi", "english", "--name", "Jeremy"}
-	os.Args = []string{"+build", "--buildkit-image", "earthly/buildkitd:main"}
-	exitCode := app.run(ctx, []string{"+build", "--buildkit-image", "earthly/buildkitd:main"})
+	app.test = "for mark test"
+	exitCode := app.run(ctx, []string{"", "--buildkit-image", "earthly/buildkitd:main", "+build"})
+
+	//exitCode := app.run(ctx, os.Args)
 	// app.cfg will be nil when a user runs `earthly --version`;
 	// however in all other regular commands app.cfg will be set in app.Before
 	if !app.disableAnalytics && app.cfg != nil && !app.cfg.Global.DisableAnalytics {
@@ -362,6 +367,8 @@ func newEarthlyApp(ctx context.Context, console conslogging.ConsoleLogger) *eart
 			buildkitdSettings: buildkitd.Settings{},
 		},
 	}
+
+	//app.buildkitdImage = "earthly/buildkitd:main"
 
 	earthly := getBinaryName()
 
@@ -2552,13 +2559,13 @@ func (app *earthlyApp) actionBuild(c *cli.Context) error {
 			return errors.New("cannot use --no-output with image or artifact modes")
 		}
 	}
+	flagArgs, nonFlagArgs, err := variables.ParseFlagArgsWithNonFlags(c.Args().Slice())
 
-	flagArgs, _, err := variables.ParseFlagArgsWithNonFlags(c.Args().Slice())
 	if err != nil {
 		return errors.Wrapf(err, "parse args %s", strings.Join(c.Args().Slice(), " "))
 	}
 
-	return app.actionBuildImp(c, flagArgs, []string{"+build"})
+	return app.actionBuildImp(c, flagArgs, nonFlagArgs)
 }
 
 // warnIfArgContainsBuildArg will issue a warning if a flag is incorrectly prefixed with build-arg.

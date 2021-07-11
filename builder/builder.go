@@ -107,6 +107,7 @@ func NewBuilder(ctx context.Context, opt Opt) (*Builder, error) {
 
 // BuildTarget executes the build of a given Earthly target.
 func (b *Builder) BuildTarget(ctx context.Context, target domain.Target, opt BuildOpt) (*states.MultiTarget, error) {
+
 	mts, err := b.convertAndBuild(ctx, target, opt)
 	if err != nil {
 		return nil, err

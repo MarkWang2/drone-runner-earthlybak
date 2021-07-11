@@ -230,7 +230,7 @@ func RunApp() {
 	app := newEarthlyApp(ctx, conslogging.Current(colorMode, padding, false))
 	app.autoComplete()
 	//os.Args = []string{"say", "hi", "english", "--name", "Jeremy"}
-	os.Args = []string{"+build", "--buildkit-image", "earthly/buildkitd:main"}
+	//os.Args = []string{"+build", "--buildkit-image", "earthly/buildkitd:main"}
 	exitCode := app.run(ctx, os.Args)
 	// app.cfg will be nil when a user runs `earthly --version`;
 	// however in all other regular commands app.cfg will be set in app.Before
@@ -2571,6 +2571,7 @@ func (app *earthlyApp) warnIfArgContainsBuildArg(flagArgs []string) {
 	}
 }
 
+// todo: use a new class to handle or still use cmd use json as flag params.
 func (app *earthlyApp) actionBuildImp(c *cli.Context, flagArgs, nonFlagArgs []string) error {
 	app.warnIfArgContainsBuildArg(flagArgs)
 	var target domain.Target

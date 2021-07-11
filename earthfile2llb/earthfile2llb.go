@@ -133,6 +133,56 @@ func Earthfile2LLB(ctx context.Context, target domain.Target, opt ConvertOpt) (m
 	return converter.FinalizeStates(ctx)
 }
 
+// Earthfile2LLB parses a earthfile and executes the statements for a given target.
+func Drone2LLB(ctx context.Context, target domain.Target, opt ConvertOpt) (mts *states.MultiTarget, err error) {
+	if opt.SolveCache == nil {
+		opt.SolveCache = states.NewSolveCache()
+	}
+	if opt.Visited == nil {
+		opt.Visited = states.NewVisitedCollection()
+	}
+	if opt.MetaResolver == nil {
+		opt.MetaResolver = NewCachedMetaResolver(opt.GwClient)
+	}
+	// Resolve build context.
+	bc, err := opt.Resolver.Resolve(ctx, opt.GwClient, target)
+	if err != nil {
+		return nil, errors.Wrapf(err, "resolve build context for target %s", target.String())
+	}
+
+	ftrs, err := features.GetFeatures(bc.Earthfile.Version)
+	if err != nil {
+		return nil, errors.Wrapf(err, "resolve feature set for version %v for target %s", bc.Earthfile.Version.Args, target.String())
+	}
+
+	if ftrs.ReferencedSaveOnly {
+		fmt.Printf("TODO feature-flip referenced save artifact as local feature in a future PR.\n")
+	}
+
+	targetWithMetadata := bc.Ref.(domain.Target)
+	sts, found, err := opt.Visited.Add(ctx, targetWithMetadata, opt.Platform, opt.AllowPrivileged, opt.OverridingVars, opt.parentDepSub)
+	if err != nil {
+		return nil, err
+	}
+	if found {
+		// This target has already been done.
+		return &states.MultiTarget{
+			Final:   sts,
+			Visited: opt.Visited,
+		}, nil
+	}
+	converter, err := NewConverter(ctx, targetWithMetadata, bc, sts, opt)
+	if err != nil {
+		return nil, err
+	}
+	interpreter := newInterpreter(converter, targetWithMetadata, opt.AllowPrivileged, opt.ParallelConversion, opt.Parallelism, opt.Console, opt.GitLookup)
+	err = interpreter.Run(ctx, bc.Earthfile)
+	if err != nil {
+		return nil, err
+	}
+	return converter.FinalizeStates(ctx)
+}
+
 // GetTargets returns a list of targets from an Earthfile.
 func GetTargets(filename string) ([]string, error) {
 	ef, err := ast.Parse(context.TODO(), filename, false)
