@@ -2,20 +2,20 @@ package buildcontext
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"github.com/drone-runners/drone-runner-docker/domain"
 	"github.com/drone-runners/drone-runner-docker/engine/resource"
 	"github.com/drone/runner-go/manifest"
-	"path/filepath"
-	"strings"
-
 	"github.com/earthly/earthly/ast"
 	"github.com/earthly/earthly/ast/spec"
 	"github.com/earthly/earthly/cleanup"
 	"github.com/earthly/earthly/conslogging"
-	"github.com/earthly/earthly/domain"
 	"github.com/earthly/earthly/util/gitutil"
 	"github.com/earthly/earthly/util/llbutil/pllb"
 	"github.com/earthly/earthly/util/syncutil/synccache"
+	"path/filepath"
+	"strings"
 
 	gwclient "github.com/moby/buildkit/frontend/gateway/client"
 	"github.com/pkg/errors"
@@ -31,6 +31,7 @@ type Data struct {
 	Earthfile spec.Earthfile
 	// BuildFilePath is the local path where the Earthfile or Dockerfile can be found.
 	BuildFilePath string
+
 	// BuildContext is the state to use for the build.
 	BuildContext pllb.State
 	// GitMetadata contains git metadata information.
@@ -97,8 +98,9 @@ func (r *Resolver) Resolve(ctx context.Context, gwClient gwclient.Client, ref do
 	}
 	d.Ref = gitutil.ReferenceWithGitMeta(ref, d.GitMetadata)
 	d.LocalDirs = localDirs
+	target := ref.(domain.Target)
 	if !strings.HasPrefix(ref.GetName(), DockerfileMetaTarget) {
-		d.Earthfile, err = r.parseEarthfile(ctx, d.BuildFilePath)
+		d.Earthfile, err = r.parseTargetJsonfile(ctx, target.TargetASTJson)
 		if err != nil {
 			return nil, err
 		}
@@ -119,6 +121,12 @@ func (r *Resolver) parseEarthfile(ctx context.Context, path string) (spec.Earthf
 
 	ef = parseDronefile("engine/compiler/testdata/serial.yml")
 	return ef, nil
+}
+
+func (r *Resolver) parseTargetJsonfile(ctx context.Context, jsonTarget string) (spec.Earthfile, error) {
+	var efile spec.Earthfile
+	err := json.Unmarshal([]byte(jsonTarget), &efile)
+	return efile, err
 }
 
 // Target ==> step

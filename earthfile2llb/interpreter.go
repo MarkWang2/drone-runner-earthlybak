@@ -20,10 +20,10 @@ import (
 	"github.com/earthly/earthly/analytics"
 	"github.com/earthly/earthly/ast/spec"
 	"github.com/earthly/earthly/conslogging"
-	"github.com/earthly/earthly/domain"
+	"github.com/drone-runners/drone-runner-docker/domain"
 	"github.com/earthly/earthly/util/flagutil"
 	"github.com/earthly/earthly/util/llbutil"
-	"github.com/earthly/earthly/variables"
+	"github.com/drone-runners/drone-runner-docker/variables"
 
 	specs "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"

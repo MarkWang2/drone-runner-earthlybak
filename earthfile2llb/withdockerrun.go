@@ -13,8 +13,8 @@ import (
 
 	"github.com/containerd/containerd/platforms"
 	"github.com/earthly/earthly/dockertar"
-	"github.com/earthly/earthly/domain"
-	"github.com/earthly/earthly/states"
+	"github.com/drone-runners/drone-runner-docker/domain"
+	"github.com/drone-runners/drone-runner-docker/states"
 	"github.com/earthly/earthly/util/llbutil"
 	"github.com/earthly/earthly/util/llbutil/pllb"
 	"github.com/moby/buildkit/client/llb"

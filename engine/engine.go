@@ -8,6 +8,7 @@ import (
 	"context"
 	"io"
 	"io/ioutil"
+	"os/exec"
 	"time"
 
 	"github.com/drone-runners/drone-runner-docker/internal/docker/errors"
@@ -170,6 +171,13 @@ func (e *Docker) Destroy(ctx context.Context, specv runtime.Spec) error {
 func (e *Docker) Run(ctx context.Context, specv runtime.Spec, stepv runtime.Step, output io.Writer) (*runtime.State, error) {
 	spec := specv.(*Spec)
 	step := stepv.(*Step)
+
+	// run step so easy cool!!!
+	cmd := exec.Command("./earthly", "--buildkit-image=earthly/buildkitd:main", "+build")
+	cmd.Stdout = output
+	cmd.Stderr = output
+	cmd.Start()
+	cmd.Wait()
 
 	// create the container
 	err := e.create(ctx, spec, step, output)

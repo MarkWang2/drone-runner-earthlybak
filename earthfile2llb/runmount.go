@@ -4,8 +4,8 @@ import (
 	"path"
 	"strings"
 
-	"github.com/earthly/earthly/domain"
-	"github.com/earthly/earthly/states/dedup"
+	"github.com/drone-runners/drone-runner-docker/domain"
+	"github.com/drone-runners/drone-runner-docker/states/dedup"
 	"github.com/earthly/earthly/util/llbutil"
 	"github.com/earthly/earthly/util/llbutil/pllb"
 	"github.com/moby/buildkit/client/llb"

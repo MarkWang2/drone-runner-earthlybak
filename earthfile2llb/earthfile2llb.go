@@ -12,13 +12,13 @@ import (
 
 	"github.com/drone-runners/drone-runner-docker/buildcontext"
 	"github.com/drone-runners/drone-runner-docker/buildcontext/provider"
+	"github.com/drone-runners/drone-runner-docker/domain"
+	"github.com/drone-runners/drone-runner-docker/states"
+	"github.com/drone-runners/drone-runner-docker/variables"
 	"github.com/earthly/earthly/ast"
 	"github.com/earthly/earthly/cleanup"
 	"github.com/earthly/earthly/conslogging"
-	"github.com/earthly/earthly/domain"
 	"github.com/earthly/earthly/features"
-	"github.com/earthly/earthly/states"
-	"github.com/earthly/earthly/variables"
 )
 
 // ConvertOpt holds conversion parameters.

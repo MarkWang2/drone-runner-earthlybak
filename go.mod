@@ -35,6 +35,7 @@ require (
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.1 // indirect
 	github.com/otiai10/copy v1.1.1 // indirect
+	github.com/pieterclaerhout/go-log v1.14.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/sirupsen/logrus v1.8.1
 	github.com/tonistiigi/fsutil v0.0.0-20210525040343-5dfbf5db66b9 // indirect

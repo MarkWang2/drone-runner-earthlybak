@@ -8,9 +8,9 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/earthly/earthly/domain"
-	"github.com/earthly/earthly/states"
-	"github.com/earthly/earthly/states/image"
+	"github.com/drone-runners/drone-runner-docker/domain"
+	"github.com/drone-runners/drone-runner-docker/states"
+	"github.com/drone-runners/drone-runner-docker/states/image"
 	"github.com/earthly/earthly/util/llbutil/pllb"
 	"github.com/moby/buildkit/client"
 	"github.com/moby/buildkit/client/llb"

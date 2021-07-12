@@ -7,8 +7,8 @@ import (
 	"os"
 	"path"
 
-	"github.com/earthly/earthly/domain"
-	"github.com/earthly/earthly/states"
+	"github.com/drone-runners/drone-runner-docker/domain"
+	"github.com/drone-runners/drone-runner-docker/states"
 	"github.com/moby/buildkit/client/llb"
 	"github.com/moby/buildkit/session/localhost"
 	"github.com/pkg/errors"

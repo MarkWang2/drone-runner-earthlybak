@@ -63,14 +63,14 @@ import (
 	debuggercommon "github.com/earthly/earthly/debugger/common"
 	"github.com/earthly/earthly/debugger/terminal"
 	"github.com/earthly/earthly/docker2earthly"
-	"github.com/earthly/earthly/domain"
+	"github.com/drone-runners/drone-runner-docker/domain"
 	"github.com/earthly/earthly/secretsclient"
-	"github.com/earthly/earthly/states"
+	"github.com/drone-runners/drone-runner-docker/states"
 	"github.com/earthly/earthly/util/cliutil"
 	"github.com/earthly/earthly/util/fileutil"
 	"github.com/earthly/earthly/util/llbutil"
 	"github.com/earthly/earthly/util/termutil"
-	"github.com/earthly/earthly/variables"
+	"github.com/drone-runners/drone-runner-docker/variables"
 )
 
 var dotEnvPath = ".env"

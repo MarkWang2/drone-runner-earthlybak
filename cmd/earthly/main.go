@@ -51,6 +51,7 @@ import (
 	"github.com/drone-runners/drone-runner-docker/buildcontext"
 	"github.com/drone-runners/drone-runner-docker/buildcontext/provider"
 	"github.com/drone-runners/drone-runner-docker/builder"
+	"github.com/drone-runners/drone-runner-docker/domain"
 	"github.com/drone-runners/drone-runner-docker/earthfile2llb"
 	"github.com/earthly/earthly/analytics"
 	"github.com/earthly/earthly/ast"
@@ -62,14 +63,13 @@ import (
 	debuggercommon "github.com/earthly/earthly/debugger/common"
 	"github.com/earthly/earthly/debugger/terminal"
 	"github.com/earthly/earthly/docker2earthly"
-	"github.com/earthly/earthly/domain"
 	"github.com/earthly/earthly/secretsclient"
-	"github.com/earthly/earthly/states"
+	"github.com/drone-runners/drone-runner-docker/states"
 	"github.com/earthly/earthly/util/cliutil"
 	"github.com/earthly/earthly/util/fileutil"
 	"github.com/earthly/earthly/util/llbutil"
 	"github.com/earthly/earthly/util/termutil"
-	"github.com/earthly/earthly/variables"
+	"github.com/drone-runners/drone-runner-docker/variables"
 )
 
 var dotEnvPath = ".env"
@@ -101,6 +101,7 @@ type cliFlags struct {
 	allowPrivileged           bool
 	enableProfiler            bool
 	buildkitHost              string
+	targetsJson string
 	buildkitdImage            string
 	remoteCache               string
 	maxRemoteCache            bool
@@ -452,6 +453,13 @@ func newEarthlyApp(ctx context.Context, console conslogging.ConsoleLogger) *eart
 			EnvVars:     []string{"EARTHLY_CONFIG"},
 			Usage:       "Path to config file",
 			Destination: &app.configPath,
+		},
+		&cli.StringFlag{
+			Name:        "config",
+			//Value:       defaultConfigPath(),
+			EnvVars:     []string{"TARGETS_JSON"},
+			Usage:       "target json string ",
+			Destination: &app.targetsJson,
 		},
 		&cli.StringFlag{
 			Name:        "ssh-auth-sock",
