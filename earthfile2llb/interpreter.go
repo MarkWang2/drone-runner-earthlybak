@@ -78,8 +78,16 @@ func (i *Interpreter) Run(ctx context.Context, ef spec.Earthfile) (err error) {
 	//ef = testCompile2("engine/compiler/testdata/serial.yml")
 	eg.Go(func() error {
 		defer close(done)
+		if i.target.Target == "base" {
+			i.isBase = true
+			err := i.handleBlock(ctx, ef.BaseRecipe)
+			i.isBase = false
+			return err
+		}
 		for _, t := range ef.Targets {
-			return i.handleTarget(ctx, t)
+			if t.Name == i.target.Target {
+				return i.handleTarget(ctx, t)
+			}
 		}
 		return i.errorf(ef.SourceLocation, "target %s not found", i.target.Target)
 	})
@@ -97,15 +105,28 @@ func (i *Interpreter) Run(ctx context.Context, ef spec.Earthfile) (err error) {
 }
 
 func (i *Interpreter) handleTarget(ctx context.Context, t spec.Target) error {
+	// Apply implicit FROM +base
+	err := i.converter.From(ctx, "+base", nil, i.allowPrivileged, nil)
+	if err != nil {
+		return i.wrapError(err, t.SourceLocation, "apply FROM")
+	}
 	return i.handleBlock(ctx, t.Recipe)
 }
 
 func (i *Interpreter) handleBlock(ctx context.Context, b spec.Block) error {
-	for _, stmt := range b {
+	prevWasArg := true // not exactly true, but makes the logic easier
+	for index, stmt := range b {
+		if i.parallelConversion && prevWasArg {
+			err := i.handleBlockParallel(ctx, b, index)
+			if err != nil {
+				return err
+			}
+		}
 		err := i.handleStatement(ctx, stmt)
 		if err != nil {
 			return err
 		}
+		prevWasArg = (stmt.Command != nil && stmt.Command.Name == "ARG")
 	}
 	return nil
 }
@@ -1027,14 +1048,6 @@ func (i *Interpreter) handleVolume(ctx context.Context, cmd spec.Command) error 
 	}
 	return nil
 }
-
-//func (i *Interpreter) handleEnvs(ctx context.Context) error {
-//	for key, value := range com.Steps[1].Envs {
-//		i.converter.Env(ctx, key, value)
-//	}
-//
-//	return nil
-//}
 
 func (i *Interpreter) handleEnv(ctx context.Context, cmd spec.Command) error {
 	if i.pushOnlyAllowed {
