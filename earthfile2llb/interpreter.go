@@ -16,13 +16,13 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/drone-runners/drone-runner-docker/analytics"
+	"github.com/drone-runners/drone-runner-docker/ast/spec"
 	"github.com/drone-runners/drone-runner-docker/buildcontext"
-	"github.com/earthly/earthly/analytics"
-	"github.com/earthly/earthly/ast/spec"
-	"github.com/earthly/earthly/conslogging"
+	"github.com/drone-runners/drone-runner-docker/conslogging"
 	"github.com/drone-runners/drone-runner-docker/domain"
-	"github.com/earthly/earthly/util/flagutil"
-	"github.com/earthly/earthly/util/llbutil"
+	"github.com/drone-runners/drone-runner-docker/util/flagutil"
+	"github.com/drone-runners/drone-runner-docker/util/llbutil"
 	"github.com/drone-runners/drone-runner-docker/variables"
 
 	specs "github.com/opencontainers/image-spec/specs-go/v1"

@@ -7,9 +7,9 @@ import (
 	"github.com/containerd/containerd/platforms"
 	"github.com/drone-runners/drone-runner-docker/domain"
 	"github.com/drone-runners/drone-runner-docker/states/dedup"
-	"github.com/earthly/earthly/util/gitutil"
-	"github.com/earthly/earthly/util/llbutil"
-	"github.com/earthly/earthly/util/stringutil"
+	"github.com/drone-runners/drone-runner-docker/util/gitutil"
+	"github.com/drone-runners/drone-runner-docker/util/llbutil"
+	"github.com/drone-runners/drone-runner-docker/util/stringutil"
 	specs "github.com/opencontainers/image-spec/specs-go/v1"
 )
 

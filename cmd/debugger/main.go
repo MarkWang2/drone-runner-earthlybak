@@ -10,9 +10,9 @@ import (
 	"os/exec"
 	"time"
 
-	"github.com/earthly/earthly/conslogging"
-	"github.com/earthly/earthly/debugger/common"
-	"github.com/earthly/earthly/slog"
+	"github.com/drone-runners/drone-runner-docker/conslogging"
+	"github.com/drone-runners/drone-runner-docker/debugger/common"
+	"github.com/drone-runners/drone-runner-docker/slog"
 
 	"github.com/alessio/shellescape"
 	"github.com/creack/pty"

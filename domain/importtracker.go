@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/earthly/earthly/conslogging"
+	"github.com/drone-runners/drone-runner-docker/conslogging"
 
 	"github.com/pkg/errors"
 )

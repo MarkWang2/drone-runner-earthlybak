@@ -10,15 +10,15 @@ import (
 	"github.com/pkg/errors"
 	"golang.org/x/sync/semaphore"
 
+	"github.com/drone-runners/drone-runner-docker/ast"
 	"github.com/drone-runners/drone-runner-docker/buildcontext"
 	"github.com/drone-runners/drone-runner-docker/buildcontext/provider"
+	"github.com/drone-runners/drone-runner-docker/cleanup"
+	"github.com/drone-runners/drone-runner-docker/conslogging"
 	"github.com/drone-runners/drone-runner-docker/domain"
+	"github.com/drone-runners/drone-runner-docker/features"
 	"github.com/drone-runners/drone-runner-docker/states"
 	"github.com/drone-runners/drone-runner-docker/variables"
-	"github.com/earthly/earthly/ast"
-	"github.com/earthly/earthly/cleanup"
-	"github.com/earthly/earthly/conslogging"
-	"github.com/earthly/earthly/features"
 )
 
 // ConvertOpt holds conversion parameters.

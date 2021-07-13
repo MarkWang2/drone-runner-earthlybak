@@ -48,27 +48,27 @@ import (
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/term"
 
+	"github.com/drone-runners/drone-runner-docker/analytics"
+	"github.com/drone-runners/drone-runner-docker/ast"
+	"github.com/drone-runners/drone-runner-docker/autocomplete"
 	"github.com/drone-runners/drone-runner-docker/buildcontext"
 	"github.com/drone-runners/drone-runner-docker/buildcontext/provider"
 	"github.com/drone-runners/drone-runner-docker/builder"
+	"github.com/drone-runners/drone-runner-docker/buildkitd"
+	"github.com/drone-runners/drone-runner-docker/cleanup"
+	"github.com/drone-runners/drone-runner-docker/config"
+	"github.com/drone-runners/drone-runner-docker/conslogging"
+	debuggercommon "github.com/drone-runners/drone-runner-docker/debugger/common"
+	"github.com/drone-runners/drone-runner-docker/debugger/terminal"
+	"github.com/drone-runners/drone-runner-docker/docker2earthly"
 	"github.com/drone-runners/drone-runner-docker/domain"
 	"github.com/drone-runners/drone-runner-docker/earthfile2llb"
-	"github.com/earthly/earthly/analytics"
-	"github.com/earthly/earthly/ast"
-	"github.com/earthly/earthly/autocomplete"
-	"github.com/earthly/earthly/buildkitd"
-	"github.com/earthly/earthly/cleanup"
-	"github.com/earthly/earthly/config"
-	"github.com/earthly/earthly/conslogging"
-	debuggercommon "github.com/earthly/earthly/debugger/common"
-	"github.com/earthly/earthly/debugger/terminal"
-	"github.com/earthly/earthly/docker2earthly"
-	"github.com/earthly/earthly/secretsclient"
+	"github.com/drone-runners/drone-runner-docker/secretsclient"
 	"github.com/drone-runners/drone-runner-docker/states"
-	"github.com/earthly/earthly/util/cliutil"
-	"github.com/earthly/earthly/util/fileutil"
-	"github.com/earthly/earthly/util/llbutil"
-	"github.com/earthly/earthly/util/termutil"
+	"github.com/drone-runners/drone-runner-docker/util/cliutil"
+	"github.com/drone-runners/drone-runner-docker/util/fileutil"
+	"github.com/drone-runners/drone-runner-docker/util/llbutil"
+	"github.com/drone-runners/drone-runner-docker/util/termutil"
 	"github.com/drone-runners/drone-runner-docker/variables"
 )
 
@@ -101,7 +101,7 @@ type cliFlags struct {
 	allowPrivileged           bool
 	enableProfiler            bool
 	buildkitHost              string
-	targetsJson string
+	targetsJson               string
 	buildkitdImage            string
 	remoteCache               string
 	maxRemoteCache            bool
@@ -454,13 +454,14 @@ func newEarthlyApp(ctx context.Context, console conslogging.ConsoleLogger) *eart
 			Usage:       "Path to config file",
 			Destination: &app.configPath,
 		},
-		&cli.StringFlag{
-			Name:        "config",
-			//Value:       defaultConfigPath(),
-			EnvVars:     []string{"TARGETS_JSON"},
-			Usage:       "target json string ",
-			Destination: &app.targetsJson,
-		},
+		//&cli.StringFlag{
+		//	Name:        "config",
+		//	Value:      "",
+		//	//Value:       defaultConfigPath(),
+		//	EnvVars:     []string{"TARGETS_JSON"},
+		//	Usage:       "target json string ",
+		//	Destination: &app.targetsJson,
+		//},
 		&cli.StringFlag{
 			Name:        "ssh-auth-sock",
 			Value:       os.Getenv("SSH_AUTH_SOCK"),
@@ -1539,7 +1540,7 @@ func (app *earthlyApp) run(ctx context.Context, args []string) int {
 			if bytes.Contains(baseErrMsg, []byte("transport is closing")) {
 				app.console.Warnf(
 					"It seems that buildkitd is shutting down or it has crashed. " +
-						"You can report crashes at https://github.com/earthly/earthly/issues/new.")
+						"You can report crashes at https://github.com/drone-runners/drone-runner-docker/issues/new.")
 				buildkitd.PrintLogs(ctx, app.buildkitdSettings, app.console)
 				return 7
 			}
@@ -1547,14 +1548,14 @@ func (app *earthlyApp) run(ctx context.Context, args []string) int {
 			app.console.Warnf("Error: %v\n", err)
 			app.console.Warnf(
 				"It seems that buildkitd is shutting down or it has crashed. " +
-					"You can report crashes at https://github.com/earthly/earthly/issues/new.")
+					"You can report crashes at https://github.com/drone-runners/drone-runner-docker/issues/new.")
 			buildkitd.PrintLogs(ctx, app.buildkitdSettings, app.console)
 			return 7
 		} else if errors.Is(err, buildkitd.ErrBuildkitStartFailure) {
 			app.console.Warnf("Error: %v\n", err)
 			app.console.Warnf(
 				"It seems that buildkitd had an issue. " +
-					"You can report crashes at https://github.com/earthly/earthly/issues/new.")
+					"You can report crashes at https://github.com/drone-runners/drone-runner-docker/issues/new.")
 			buildkitd.PrintLogs(ctx, app.buildkitdSettings, app.console)
 			return 6
 		} else if isInterpereterError {

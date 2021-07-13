@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/drone-runners/drone-runner-docker/conslogging"
 	"github.com/drone-runners/drone-runner-docker/domain"
-	"github.com/earthly/earthly/conslogging"
-	"github.com/earthly/earthly/util/gitutil"
+	"github.com/drone-runners/drone-runner-docker/util/gitutil"
 
 	dfShell "github.com/moby/buildkit/frontend/dockerfile/shell"
 	specs "github.com/opencontainers/image-spec/specs-go/v1"

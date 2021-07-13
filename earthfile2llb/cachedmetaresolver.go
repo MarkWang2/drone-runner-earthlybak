@@ -3,8 +3,8 @@ package earthfile2llb
 import (
 	"context"
 
-	"github.com/earthly/earthly/util/llbutil"
-	"github.com/earthly/earthly/util/syncutil/synccache"
+	"github.com/drone-runners/drone-runner-docker/util/llbutil"
+	"github.com/drone-runners/drone-runner-docker/util/syncutil/synccache"
 	"github.com/moby/buildkit/client/llb"
 	"github.com/opencontainers/go-digest"
 )

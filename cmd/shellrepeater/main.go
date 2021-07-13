@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 
-	"github.com/earthly/earthly/debugger/server"
-	"github.com/earthly/earthly/slog"
+	"github.com/drone-runners/drone-runner-docker/debugger/server"
+	"github.com/drone-runners/drone-runner-docker/slog"
 
 	"github.com/sirupsen/logrus"
 )

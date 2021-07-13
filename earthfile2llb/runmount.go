@@ -6,8 +6,8 @@ import (
 
 	"github.com/drone-runners/drone-runner-docker/domain"
 	"github.com/drone-runners/drone-runner-docker/states/dedup"
-	"github.com/earthly/earthly/util/llbutil"
-	"github.com/earthly/earthly/util/llbutil/pllb"
+	"github.com/drone-runners/drone-runner-docker/util/llbutil"
+	"github.com/drone-runners/drone-runner-docker/util/llbutil/pllb"
 	"github.com/moby/buildkit/client/llb"
 	"github.com/pkg/errors"
 )

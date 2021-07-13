@@ -11,23 +11,23 @@ func TestGetProjectName(t *testing.T) {
 		tag  string
 		safe string
 	}{
-		{"http://github.com/earthly/earthly", "earthly/earthly"},
+		{"http://github.com/drone-runners/drone-runner-docker", "earthly/earthly"},
 		{"http://gitlab.com/earthly/earthly", "earthly/earthly"},
-		{"https://github.com/earthly/earthly", "earthly/earthly"},
-		{"https://user@github.com/earthly/earthly", "earthly/earthly"},
-		{"https://user:password@github.com/earthly/earthly", "earthly/earthly"},
+		{"https://github.com/drone-runners/drone-runner-docker", "earthly/earthly"},
+		{"https://user@github.com/drone-runners/drone-runner-docker", "earthly/earthly"},
+		{"https://user:password@github.com/drone-runners/drone-runner-docker", "earthly/earthly"},
 		{"git@github.com:earthly/earthly", "earthly/earthly"},
 		{"git@bitbucket.com:earthly/earthly", "earthly/earthly"},
-		{"ssh://git@github.com/earthly/earthly", "earthly/earthly"},
+		{"ssh://git@github.com/drone-runners/drone-runner-docker", "earthly/earthly"},
 		{"ssh://git@github.com:22/earthly/earthly", "earthly/earthly"},
-		{"http://github.com/earthly/earthly/subdir/anothersubdir", "earthly/earthly/subdir/anothersubdir"},
+		{"http://github.com/drone-runners/drone-runner-docker/subdir/anothersubdir", "earthly/earthly/subdir/anothersubdir"},
 		{"http://gitlab.com/earthly/earthly/subdir/anothersubdir", "earthly/earthly/subdir/anothersubdir"},
-		{"https://github.com/earthly/earthly/subdir/anothersubdir", "earthly/earthly/subdir/anothersubdir"},
-		{"https://user@github.com/earthly/earthly/subdir/anothersubdir", "earthly/earthly/subdir/anothersubdir"},
-		{"https://user:password@github.com/earthly/earthly/subdir/anothersubdir", "earthly/earthly/subdir/anothersubdir"},
+		{"https://github.com/drone-runners/drone-runner-docker/subdir/anothersubdir", "earthly/earthly/subdir/anothersubdir"},
+		{"https://user@github.com/drone-runners/drone-runner-docker/subdir/anothersubdir", "earthly/earthly/subdir/anothersubdir"},
+		{"https://user:password@github.com/drone-runners/drone-runner-docker/subdir/anothersubdir", "earthly/earthly/subdir/anothersubdir"},
 		{"git@github.com:earthly/earthly/subdir/anothersubdir", "earthly/earthly/subdir/anothersubdir"},
 		{"git@bitbucket.com:earthly/earthly/subdir/anothersubdir", "earthly/earthly/subdir/anothersubdir"},
-		{"ssh://git@github.com/earthly/earthly/subdir/anothersubdir", "earthly/earthly/subdir/anothersubdir"},
+		{"ssh://git@github.com/drone-runners/drone-runner-docker/subdir/anothersubdir", "earthly/earthly/subdir/anothersubdir"},
 		{"ssh://git@github.com:22/earthly/earthly/subdir/anothersubdir", "earthly/earthly/subdir/anothersubdir"},
 	}
 

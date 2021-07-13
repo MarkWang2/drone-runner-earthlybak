@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"github.com/armon/circbuf"
+	"github.com/drone-runners/drone-runner-docker/conslogging"
 	"github.com/dustin/go-humanize"
-	"github.com/earthly/earthly/conslogging"
 	"github.com/mattn/go-isatty"
 	"github.com/moby/buildkit/client"
 	"github.com/opencontainers/go-digest"

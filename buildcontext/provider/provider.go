@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/earthly/earthly/conslogging"
+	"github.com/drone-runners/drone-runner-docker/conslogging"
 
 	"github.com/dustin/go-humanize"
 	"github.com/moby/buildkit/session"

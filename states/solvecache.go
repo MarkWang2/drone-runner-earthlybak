@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/earthly/earthly/util/llbutil/pllb"
-	"github.com/earthly/earthly/util/syncutil/synccache"
+	"github.com/drone-runners/drone-runner-docker/util/llbutil/pllb"
+	"github.com/drone-runners/drone-runner-docker/util/syncutil/synccache"
 	"github.com/pkg/errors"
 )
 

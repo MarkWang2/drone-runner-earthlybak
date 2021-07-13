@@ -17,9 +17,9 @@ import (
 	"golang.org/x/crypto/ssh/agent"
 	"golang.org/x/crypto/ssh/knownhosts"
 
-	"github.com/earthly/earthly/conslogging"
-	"github.com/earthly/earthly/util/cliutil"
-	"github.com/earthly/earthly/util/fileutil"
+	"github.com/drone-runners/drone-runner-docker/conslogging"
+	"github.com/drone-runners/drone-runner-docker/util/cliutil"
+	"github.com/drone-runners/drone-runner-docker/util/fileutil"
 
 	"github.com/jdxcode/netrc"
 	"github.com/moby/buildkit/util/gitutil"
@@ -312,9 +312,9 @@ func (gl *GitLookup) makeCloneURL(m *gitMatcher, host, gitPath string) (string, 
 }
 
 // GetCloneURL returns the repo to clone, and a path relative to the repo
-//   "github.com/earthly/earthly"             ---> ("git@github.com/earthly/earthly.git", "")
-//   "github.com/earthly/earthly/examples"    ---> ("git@github.com/earthly/earthly.git", "examples")
-//   "github.com/earthly/earthly/examples/go" ---> ("git@github.com/earthly/earthly.git", "examples/go")
+//   "github.com/drone-runners/drone-runner-docker"             ---> ("git@github.com/drone-runners/drone-runner-docker.git", "")
+//   "github.com/drone-runners/drone-runner-docker/examples"    ---> ("git@github.com/drone-runners/drone-runner-docker.git", "examples")
+//   "github.com/drone-runners/drone-runner-docker/examples/go" ---> ("git@github.com/drone-runners/drone-runner-docker.git", "examples/go")
 // Additionally a ssh keyscan might be returned (or an empty string indicating none was configured)
 func (gl *GitLookup) GetCloneURL(path string) (string, string, string, error) {
 	gl.mu.Lock()

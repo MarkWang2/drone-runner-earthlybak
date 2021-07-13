@@ -1,0 +1,357 @@
+{
+  "baseRecipe": [
+    {
+      "command": {
+        "name": "FROM",
+        "args": [
+          "golang:1.15-alpine3.13"
+        ],
+        "sourceLocation": {
+          "file": "examples/go/Earthfile",
+          "startLine": 1,
+          "startColumn": 0,
+          "endLine": 1,
+          "endColumn": 5
+        }
+      },
+      "sourceLocation": {
+        "file": "examples/go/Earthfile",
+        "startLine": 1,
+        "startColumn": 0,
+        "endLine": 1,
+        "endColumn": 5
+      }
+    },
+    {
+      "command": {
+        "name": "WORKDIR",
+        "args": [
+          "/go-example"
+        ],
+        "sourceLocation": {
+          "file": "examples/go/Earthfile",
+          "startLine": 2,
+          "startColumn": 0,
+          "endLine": 2,
+          "endColumn": 8
+        }
+      },
+      "sourceLocation": {
+        "file": "examples/go/Earthfile",
+        "startLine": 2,
+        "startColumn": 0,
+        "endLine": 2,
+        "endColumn": 8
+      }
+    }
+  ],
+  "targets": [
+    {
+      "name": "deps",
+      "recipe": [
+        {
+          "command": {
+            "name": "COPY",
+            "args": [
+              "go.mod",
+              "go.sum",
+              "./"
+            ],
+            "sourceLocation": {
+              "file": "examples/go/Earthfile",
+              "startLine": 5,
+              "startColumn": 4,
+              "endLine": 5,
+              "endColumn": 23
+            }
+          },
+          "sourceLocation": {
+            "file": "examples/go/Earthfile",
+            "startLine": 5,
+            "startColumn": 4,
+            "endLine": 5,
+            "endColumn": 23
+          }
+        },
+        {
+          "command": {
+            "name": "RUN",
+            "args": [
+              "go",
+              "mod",
+              "download"
+            ],
+            "sourceLocation": {
+              "file": "examples/go/Earthfile",
+              "startLine": 6,
+              "startColumn": 4,
+              "endLine": 6,
+              "endColumn": 15
+            }
+          },
+          "sourceLocation": {
+            "file": "examples/go/Earthfile",
+            "startLine": 6,
+            "startColumn": 4,
+            "endLine": 6,
+            "endColumn": 15
+          }
+        },
+        {
+          "command": {
+            "name": "SAVE ARTIFACT",
+            "args": [
+              "go.mod",
+              "AS",
+              "LOCAL",
+              "go.mod"
+            ],
+            "sourceLocation": {
+              "file": "examples/go/Earthfile",
+              "startLine": 7,
+              "startColumn": 4,
+              "endLine": 7,
+              "endColumn": 34
+            }
+          },
+          "sourceLocation": {
+            "file": "examples/go/Earthfile",
+            "startLine": 7,
+            "startColumn": 4,
+            "endLine": 7,
+            "endColumn": 34
+          }
+        },
+        {
+          "command": {
+            "name": "SAVE ARTIFACT",
+            "args": [
+              "go.sum",
+              "AS",
+              "LOCAL",
+              "go.sum"
+            ],
+            "sourceLocation": {
+              "file": "examples/go/Earthfile",
+              "startLine": 8,
+              "startColumn": 4,
+              "endLine": 8,
+              "endColumn": 34
+            }
+          },
+          "sourceLocation": {
+            "file": "examples/go/Earthfile",
+            "startLine": 8,
+            "startColumn": 4,
+            "endLine": 8,
+            "endColumn": 34
+          }
+        }
+      ],
+      "sourceLocation": {
+        "file": "examples/go/Earthfile",
+        "startLine": 4,
+        "startColumn": 0,
+        "endLine": 8,
+        "endColumn": 0
+      }
+    },
+    {
+      "name": "build",
+      "recipe": [
+        {
+          "command": {
+            "name": "FROM",
+            "args": [
+              "+deps"
+            ],
+            "sourceLocation": {
+              "file": "examples/go/Earthfile",
+              "startLine": 11,
+              "startColumn": 4,
+              "endLine": 11,
+              "endColumn": 9
+            }
+          },
+          "sourceLocation": {
+            "file": "examples/go/Earthfile",
+            "startLine": 11,
+            "startColumn": 4,
+            "endLine": 11,
+            "endColumn": 9
+          }
+        },
+        {
+          "command": {
+            "name": "COPY",
+            "args": [
+              "main.go",
+              "."
+            ],
+            "sourceLocation": {
+              "file": "examples/go/Earthfile",
+              "startLine": 12,
+              "startColumn": 4,
+              "endLine": 12,
+              "endColumn": 17
+            }
+          },
+          "sourceLocation": {
+            "file": "examples/go/Earthfile",
+            "startLine": 12,
+            "startColumn": 4,
+            "endLine": 12,
+            "endColumn": 17
+          }
+        },
+        {
+          "command": {
+            "name": "RUN",
+            "args": [
+              "go",
+              "build",
+              "-o",
+              "build/go-example",
+              "main.go"
+            ],
+            "sourceLocation": {
+              "file": "examples/go/Earthfile",
+              "startLine": 13,
+              "startColumn": 4,
+              "endLine": 13,
+              "endColumn": 37
+            }
+          },
+          "sourceLocation": {
+            "file": "examples/go/Earthfile",
+            "startLine": 13,
+            "startColumn": 4,
+            "endLine": 13,
+            "endColumn": 37
+          }
+        },
+        {
+          "command": {
+            "name": "SAVE ARTIFACT",
+            "args": [
+              "build/go-example",
+              "/go-example",
+              "AS",
+              "LOCAL",
+              "build/go-example"
+            ],
+            "sourceLocation": {
+              "file": "examples/go/Earthfile",
+              "startLine": 14,
+              "startColumn": 4,
+              "endLine": 14,
+              "endColumn": 56
+            }
+          },
+          "sourceLocation": {
+            "file": "examples/go/Earthfile",
+            "startLine": 14,
+            "startColumn": 4,
+            "endLine": 14,
+            "endColumn": 56
+          }
+        }
+      ],
+      "sourceLocation": {
+        "file": "examples/go/Earthfile",
+        "startLine": 10,
+        "startColumn": 0,
+        "endLine": 14,
+        "endColumn": 0
+      }
+    },
+    {
+      "name": "docker",
+      "recipe": [
+        {
+          "command": {
+            "name": "COPY",
+            "args": [
+              "+build/go-example",
+              "."
+            ],
+            "sourceLocation": {
+              "file": "examples/go/Earthfile",
+              "startLine": 17,
+              "startColumn": 4,
+              "endLine": 17,
+              "endColumn": 27
+            }
+          },
+          "sourceLocation": {
+            "file": "examples/go/Earthfile",
+            "startLine": 17,
+            "startColumn": 4,
+            "endLine": 17,
+            "endColumn": 27
+          }
+        },
+        {
+          "command": {
+            "name": "ENTRYPOINT",
+            "args": [
+              "/go-example/go-example"
+            ],
+            "execMode": true,
+            "sourceLocation": {
+              "file": "examples/go/Earthfile",
+              "startLine": 18,
+              "startColumn": 4,
+              "endLine": 18,
+              "endColumn": 15
+            }
+          },
+          "sourceLocation": {
+            "file": "examples/go/Earthfile",
+            "startLine": 18,
+            "startColumn": 4,
+            "endLine": 18,
+            "endColumn": 15
+          }
+        },
+        {
+          "command": {
+            "name": "SAVE IMAGE",
+            "args": [
+              "--push",
+              "earthly/examples:go"
+            ],
+            "sourceLocation": {
+              "file": "examples/go/Earthfile",
+              "startLine": 19,
+              "startColumn": 4,
+              "endLine": 19,
+              "endColumn": 22
+            }
+          },
+          "sourceLocation": {
+            "file": "examples/go/Earthfile",
+            "startLine": 19,
+            "startColumn": 4,
+            "endLine": 19,
+            "endColumn": 22
+          }
+        }
+      ],
+      "sourceLocation": {
+        "file": "examples/go/Earthfile",
+        "startLine": 16,
+        "startColumn": 0,
+        "endLine": 19,
+        "endColumn": 0
+      }
+    }
+  ],
+  "sourceLocation": {
+    "file": "examples/go/Earthfile",
+    "startLine": 0,
+    "startColumn": 0,
+    "endLine": 0,
+    "endColumn": 0
+  }
+}

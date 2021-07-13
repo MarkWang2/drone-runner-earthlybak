@@ -6,8 +6,8 @@ import (
 
 	"github.com/drone-runners/drone-runner-docker/domain"
 	"github.com/drone-runners/drone-runner-docker/states/dedup"
+	"github.com/drone-runners/drone-runner-docker/util/llbutil"
 	"github.com/drone-runners/drone-runner-docker/variables"
-	"github.com/earthly/earthly/util/llbutil"
 	specs "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 )

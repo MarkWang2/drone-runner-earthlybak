@@ -1,0 +1,535 @@
+package ast
+
+import (
+	"context"
+	"encoding/json"
+	"regexp"
+	"strings"
+
+	"github.com/drone-runners/drone-runner-docker/ast/parser"
+	"github.com/drone-runners/drone-runner-docker/ast/spec"
+	"github.com/pkg/errors"
+)
+
+var _ parser.EarthParserListener = &listener{}
+
+type block struct {
+	block         spec.Block
+	statement     *spec.Statement
+	withStatement *spec.WithStatement
+	ifStatement   *spec.IfStatement
+	elseIf        *spec.ElseIf
+	forStatement  *spec.ForStatement
+}
+
+type listener struct {
+	*parser.BaseEarthParserListener
+
+	ef          *spec.Earthfile
+	target      *spec.Target
+	userCommand *spec.UserCommand
+	blocks      []*block
+	command     *spec.Command
+
+	stmtWords []string
+	execMode  bool
+
+	ctx             context.Context
+	filePath        string
+	enableSourceMap bool
+
+	err error
+}
+
+func newListener(ctx context.Context, filePath string, enableSourceMap bool) *listener {
+	ef := &spec.Earthfile{}
+	if enableSourceMap {
+		ef.SourceLocation = &spec.SourceLocation{
+			File: filePath,
+		}
+	}
+	return &listener{
+		ctx:             ctx,
+		filePath:        filePath,
+		enableSourceMap: enableSourceMap,
+		ef:              ef,
+	}
+}
+
+func (l *listener) Err() error {
+	if len(l.blocks) != 0 && l.err == nil {
+		return errors.New("parsing did not finish")
+	}
+	return l.err
+}
+
+func (l *listener) Earthfile() spec.Earthfile {
+	return *l.ef
+}
+
+func (l *listener) block() *block {
+	return l.blocks[len(l.blocks)-1]
+}
+
+func (l *listener) pushNewBlock() {
+	l.blocks = append(l.blocks, new(block))
+}
+
+func (l *listener) popBlock() spec.Block {
+	ret := l.block().block
+	l.blocks = l.blocks[:len(l.blocks)-1]
+	return ret
+}
+
+// Base -----------------------------------------------------------------------
+
+func (l *listener) EnterEarthFile(c *parser.EarthFileContext) {
+	l.pushNewBlock()
+}
+
+func (l *listener) ExitEarthFile(c *parser.EarthFileContext) {
+	l.ef.BaseRecipe = l.popBlock()
+}
+
+// Target ---------------------------------------------------------------------
+
+func (l *listener) EnterTarget(c *parser.TargetContext) {
+	l.target = new(spec.Target)
+	if l.enableSourceMap {
+		l.target.SourceLocation = &spec.SourceLocation{
+			File:        l.filePath,
+			StartLine:   c.GetStart().GetLine(),
+			StartColumn: c.GetStart().GetColumn(),
+			EndLine:     c.GetStop().GetLine(),
+			EndColumn:   c.GetStop().GetColumn(),
+		}
+	}
+	l.pushNewBlock()
+}
+
+func (l *listener) EnterTargetHeader(c *parser.TargetHeaderContext) {
+	l.target.Name = strings.TrimSuffix(c.GetText(), ":")
+}
+
+func (l *listener) ExitTarget(c *parser.TargetContext) {
+	l.target.Recipe = l.popBlock()
+	l.ef.Targets = append(l.ef.Targets, *l.target)
+	l.target = nil
+}
+
+// User command ---------------------------------------------------------------
+
+func (l *listener) EnterUserCommand(c *parser.UserCommandContext) {
+	l.userCommand = new(spec.UserCommand)
+	if l.enableSourceMap {
+		l.userCommand.SourceLocation = &spec.SourceLocation{
+			File:        l.filePath,
+			StartLine:   c.GetStart().GetLine(),
+			StartColumn: c.GetStart().GetColumn(),
+			EndLine:     c.GetStop().GetLine(),
+			EndColumn:   c.GetStop().GetColumn(),
+		}
+	}
+	l.pushNewBlock()
+}
+
+func (l *listener) EnterUserCommandHeader(c *parser.UserCommandHeaderContext) {
+	l.userCommand.Name = strings.TrimSuffix(c.GetText(), ":")
+}
+
+func (l *listener) ExitUserCommand(c *parser.UserCommandContext) {
+	l.userCommand.Recipe = l.popBlock()
+	l.ef.UserCommands = append(l.ef.UserCommands, *l.userCommand)
+	l.userCommand = nil
+}
+
+// Statement ------------------------------------------------------------------
+
+func (l *listener) EnterStmt(c *parser.StmtContext) {
+	l.block().statement = new(spec.Statement)
+	if l.enableSourceMap {
+		l.block().statement.SourceLocation = &spec.SourceLocation{
+			File:        l.filePath,
+			StartLine:   c.GetStart().GetLine(),
+			StartColumn: c.GetStart().GetColumn(),
+			EndLine:     c.GetStop().GetLine(),
+			EndColumn:   c.GetStop().GetColumn(),
+		}
+	}
+}
+
+func (l *listener) ExitStmt(c *parser.StmtContext) {
+	l.block().block = append(l.block().block, *l.block().statement)
+	l.block().statement = nil
+}
+
+// Command --------------------------------------------------------------------
+
+func (l *listener) EnterCommandStmt(c *parser.CommandStmtContext) {
+	l.command = new(spec.Command)
+	if l.enableSourceMap {
+		l.command.SourceLocation = &spec.SourceLocation{
+			File:        l.filePath,
+			StartLine:   c.GetStart().GetLine(),
+			StartColumn: c.GetStart().GetColumn(),
+			EndLine:     c.GetStop().GetLine(),
+			EndColumn:   c.GetStop().GetColumn(),
+		}
+	}
+	l.stmtWords = []string{}
+	l.execMode = false
+}
+
+func (l *listener) ExitCommandStmt(c *parser.CommandStmtContext) {
+	l.command.Args = l.stmtWords
+	l.command.ExecMode = l.execMode
+	l.block().statement.Command = l.command
+	l.command = nil
+}
+
+// Individual commands --------------------------------------------------------
+
+func (l *listener) EnterFromStmt(c *parser.FromStmtContext) {
+	l.command.Name = "FROM"
+}
+
+func (l *listener) EnterFromDockerfileStmt(c *parser.FromDockerfileStmtContext) {
+	l.command.Name = "FROM DOCKERFILE"
+}
+
+func (l *listener) EnterLocallyStmt(c *parser.LocallyStmtContext) {
+	l.command.Name = "LOCALLY"
+}
+
+func (l *listener) EnterCopyStmt(c *parser.CopyStmtContext) {
+	l.command.Name = "COPY"
+}
+
+func (l *listener) EnterRunStmt(c *parser.RunStmtContext) {
+	l.command.Name = "RUN"
+}
+
+func (l *listener) EnterSaveArtifact(c *parser.SaveArtifactContext) {
+	l.command.Name = "SAVE ARTIFACT"
+}
+
+func (l *listener) EnterSaveImage(c *parser.SaveImageContext) {
+	l.command.Name = "SAVE IMAGE"
+}
+
+func (l *listener) EnterBuildStmt(c *parser.BuildStmtContext) {
+	l.command.Name = "BUILD"
+}
+
+func (l *listener) EnterWorkdirStmt(c *parser.WorkdirStmtContext) {
+	l.command.Name = "WORKDIR"
+}
+
+func (l *listener) EnterUserStmt(c *parser.UserStmtContext) {
+	l.command.Name = "USER"
+}
+
+func (l *listener) EnterCmdStmt(c *parser.CmdStmtContext) {
+	l.command.Name = "CMD"
+}
+
+func (l *listener) EnterEntrypointStmt(c *parser.EntrypointStmtContext) {
+	l.command.Name = "ENTRYPOINT"
+}
+
+func (l *listener) EnterExposeStmt(c *parser.ExposeStmtContext) {
+	l.command.Name = "EXPOSE"
+}
+
+func (l *listener) EnterVolumeStmt(c *parser.VolumeStmtContext) {
+	l.command.Name = "VOLUME"
+}
+
+func (l *listener) EnterEnvStmt(c *parser.EnvStmtContext) {
+	l.command.Name = "ENV"
+}
+
+func (l *listener) EnterArgStmt(c *parser.ArgStmtContext) {
+	l.command.Name = "ARG"
+}
+
+func (l *listener) EnterLabelStmt(c *parser.LabelStmtContext) {
+	l.command.Name = "LABEL"
+}
+
+func (l *listener) EnterGitCloneStmt(c *parser.GitCloneStmtContext) {
+	l.command.Name = "GIT CLONE"
+}
+
+func (l *listener) EnterHealthcheckStmt(c *parser.HealthcheckStmtContext) {
+	l.command.Name = "HEALTHCHECK"
+}
+
+func (l *listener) EnterAddStmt(c *parser.AddStmtContext) {
+	l.command.Name = "ADD"
+}
+
+func (l *listener) EnterStopsignalStmt(c *parser.StopsignalStmtContext) {
+	l.command.Name = "STOP SIGNAL"
+}
+
+func (l *listener) EnterOnbuildStmt(c *parser.OnbuildStmtContext) {
+	l.command.Name = "ONBUILD"
+}
+
+func (l *listener) EnterShellStmt(c *parser.ShellStmtContext) {
+	l.command.Name = "SHELL"
+}
+
+func (l *listener) EnterUserCommandStmt(c *parser.UserCommandStmtContext) {
+	l.command.Name = "COMMAND"
+}
+
+func (l *listener) EnterDoStmt(c *parser.DoStmtContext) {
+	l.command.Name = "DO"
+}
+
+func (l *listener) EnterImportStmt(c *parser.ImportStmtContext) {
+	l.command.Name = "IMPORT"
+}
+
+// With -----------------------------------------------------------------------
+
+func (l *listener) EnterWithStmt(c *parser.WithStmtContext) {
+	l.block().withStatement = new(spec.WithStatement)
+	if l.enableSourceMap {
+		l.block().withStatement.SourceLocation = &spec.SourceLocation{
+			File:        l.filePath,
+			StartLine:   c.GetStart().GetLine(),
+			StartColumn: c.GetStart().GetColumn(),
+			EndLine:     c.GetStop().GetLine(),
+			EndColumn:   c.GetStop().GetColumn(),
+		}
+	}
+}
+
+func (l *listener) ExitWithStmt(c *parser.WithStmtContext) {
+	l.block().statement.With = l.block().withStatement
+	l.block().withStatement = nil
+}
+
+// withBlock ------------------------------------------------------------------
+
+func (l *listener) EnterWithBlock(c *parser.WithBlockContext) {
+	l.pushNewBlock()
+
+}
+
+func (l *listener) ExitWithBlock(c *parser.WithBlockContext) {
+	withBlock := l.popBlock()
+	l.block().withStatement.Body = withBlock
+}
+
+// withCommand ----------------------------------------------------------------
+
+func (l *listener) EnterWithCommand(c *parser.WithCommandContext) {
+	l.command = new(spec.Command)
+	if l.enableSourceMap {
+		l.command.SourceLocation = &spec.SourceLocation{
+			File:        l.filePath,
+			StartLine:   c.GetStart().GetLine(),
+			StartColumn: c.GetStart().GetColumn(),
+			EndLine:     c.GetStop().GetLine(),
+			EndColumn:   c.GetStop().GetColumn(),
+		}
+	}
+	l.stmtWords = []string{}
+	l.execMode = false
+}
+
+func (l *listener) ExitWithCommand(c *parser.WithCommandContext) {
+	l.command.Args = l.stmtWords
+	l.command.ExecMode = l.execMode
+	l.block().withStatement.Command = *l.command
+	l.command = nil
+}
+
+// Individual with commands ---------------------------------------------------
+
+func (l *listener) EnterDockerCommand(c *parser.DockerCommandContext) {
+	l.command.Name = "DOCKER"
+}
+
+// If -------------------------------------------------------------------------
+
+func (l *listener) EnterIfStmt(c *parser.IfStmtContext) {
+	l.block().ifStatement = new(spec.IfStatement)
+	if l.enableSourceMap {
+		l.block().ifStatement.SourceLocation = &spec.SourceLocation{
+			File:        l.filePath,
+			StartLine:   c.GetStart().GetLine(),
+			StartColumn: c.GetStart().GetColumn(),
+			EndLine:     c.GetStop().GetLine(),
+			EndColumn:   c.GetStop().GetColumn(),
+		}
+	}
+}
+
+func (l *listener) ExitIfStmt(c *parser.IfStmtContext) {
+	l.block().statement.If = l.block().ifStatement
+	l.block().ifStatement = nil
+}
+
+func (l *listener) EnterIfExpr(c *parser.IfExprContext) {
+	l.stmtWords = []string{}
+	l.execMode = false
+}
+
+func (l *listener) ExitIfExpr(c *parser.IfExprContext) {
+	l.block().ifStatement.Expression = l.stmtWords
+	l.block().ifStatement.ExecMode = l.execMode
+}
+
+func (l *listener) EnterIfBlock(c *parser.IfBlockContext) {
+	l.pushNewBlock()
+}
+
+func (l *listener) ExitIfBlock(c *parser.IfBlockContext) {
+	ifBlock := l.popBlock()
+	l.block().ifStatement.IfBody = ifBlock
+}
+
+func (l *listener) EnterElseIfClause(c *parser.ElseIfClauseContext) {
+	l.block().elseIf = new(spec.ElseIf)
+	if l.enableSourceMap {
+		l.block().elseIf.SourceLocation = &spec.SourceLocation{
+			File:        l.filePath,
+			StartLine:   c.GetStart().GetLine(),
+			StartColumn: c.GetStart().GetColumn(),
+			EndLine:     c.GetStop().GetLine(),
+			EndColumn:   c.GetStop().GetColumn(),
+		}
+	}
+}
+
+func (l *listener) ExitElseIfClause(c *parser.ElseIfClauseContext) {
+	l.block().ifStatement.ElseIf = append(l.block().ifStatement.ElseIf, *l.block().elseIf)
+	l.block().elseIf = nil
+}
+
+func (l *listener) EnterElseIfExpr(c *parser.ElseIfExprContext) {
+	l.stmtWords = []string{}
+	l.execMode = false
+}
+
+func (l *listener) ExitElseIfExpr(c *parser.ElseIfExprContext) {
+	l.block().elseIf.Expression = l.stmtWords
+	l.block().elseIf.ExecMode = l.execMode
+}
+
+func (l *listener) EnterElseIfBlock(c *parser.ElseIfBlockContext) {
+	l.pushNewBlock()
+}
+
+func (l *listener) ExitElseIfBlock(c *parser.ElseIfBlockContext) {
+	elseIfBlock := l.popBlock()
+	l.block().elseIf.Body = elseIfBlock
+}
+
+func (l *listener) EnterElseBlock(c *parser.ElseBlockContext) {
+	l.pushNewBlock()
+}
+
+func (l *listener) ExitElseBlock(c *parser.ElseBlockContext) {
+	elseBlock := l.popBlock()
+	l.block().ifStatement.ElseBody = &elseBlock
+}
+
+// For ------------------------------------------------------------------------
+
+func (l *listener) EnterForStmt(c *parser.ForStmtContext) {
+	l.block().forStatement = new(spec.ForStatement)
+	if l.enableSourceMap {
+		l.block().forStatement.SourceLocation = &spec.SourceLocation{
+			File:        l.filePath,
+			StartLine:   c.GetStart().GetLine(),
+			StartColumn: c.GetStart().GetColumn(),
+			EndLine:     c.GetStop().GetLine(),
+			EndColumn:   c.GetStop().GetColumn(),
+		}
+	}
+}
+
+func (l *listener) ExitForStmt(c *parser.ForStmtContext) {
+	l.block().statement.For = l.block().forStatement
+	l.block().forStatement = nil
+}
+
+func (l *listener) EnterForExpr(c *parser.ForExprContext) {
+	l.stmtWords = []string{}
+}
+
+func (l *listener) ExitForExpr(c *parser.ForExprContext) {
+	l.block().forStatement.Args = l.stmtWords
+}
+
+func (l *listener) EnterForBlock(c *parser.ForBlockContext) {
+	l.pushNewBlock()
+}
+
+func (l *listener) ExitForBlock(c *parser.ForBlockContext) {
+	forBlock := l.popBlock()
+	l.block().forStatement.Body = forBlock
+}
+
+// EnvArgKey, EnvArgValue, LabelKey, LabelValue -------------------------------
+
+func (l *listener) EnterEnvArgKey(c *parser.EnvArgKeyContext) {
+	err := checkEnvVarName(c.GetText())
+	if err != nil {
+		l.err = err
+		return
+	}
+	l.stmtWords = append(l.stmtWords, c.GetText())
+}
+
+func (l *listener) EnterEnvArgValue(c *parser.EnvArgValueContext) {
+	l.stmtWords = append(l.stmtWords, "=", c.GetText())
+}
+
+func (l *listener) EnterLabelKey(c *parser.LabelKeyContext) {
+	l.stmtWords = append(l.stmtWords, c.GetText())
+}
+
+func (l *listener) EnterLabelValue(c *parser.LabelValueContext) {
+	l.stmtWords = append(l.stmtWords, "=", c.GetText())
+}
+
+// StmtWord -------------------------------------------------------------------
+
+func (l *listener) ExitStmtWordsMaybeJSON(c *parser.StmtWordsMaybeJSONContext) {
+	// Try to parse as JSON. If parse works, override the already collected stmtWords.
+	var words []string
+	err := json.Unmarshal([]byte(c.GetText()), &words)
+	if err == nil {
+		l.stmtWords = words
+		l.execMode = true
+	}
+}
+
+func (l *listener) EnterStmtWord(c *parser.StmtWordContext) {
+	l.stmtWords = append(l.stmtWords, replaceEscape(c.GetText()))
+}
+
+// ----------------------------------------------------------------------------
+
+var envVarNameRegexp = regexp.MustCompile(`^[a-zA-Z_]+[a-zA-Z0-9_]*$`)
+
+func checkEnvVarName(str string) error {
+	itMatch := envVarNameRegexp.MatchString(str)
+	if !itMatch {
+		return errors.Errorf("invalid env key definition %s", str)
+	}
+	return nil
+}
+
+var lineContinuationRegexp = regexp.MustCompile(`\\[ \t]*(#[^\n\r]*)?(\n|(\r\n))[\t ]*((#[^\n\r]*)?(\n|(\r\n))[\t ]*)*`)
+
+func replaceEscape(str string) string {
+	return lineContinuationRegexp.ReplaceAllString(str, "")
+}

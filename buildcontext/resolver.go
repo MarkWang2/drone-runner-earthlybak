@@ -4,16 +4,18 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/drone-runners/drone-runner-docker/ast"
+	"github.com/drone-runners/drone-runner-docker/ast/spec"
+	"github.com/drone-runners/drone-runner-docker/cleanup"
+	"github.com/drone-runners/drone-runner-docker/conslogging"
 	"github.com/drone-runners/drone-runner-docker/domain"
 	"github.com/drone-runners/drone-runner-docker/engine/resource"
+	"github.com/drone-runners/drone-runner-docker/util/gitutil"
+	"github.com/drone-runners/drone-runner-docker/util/llbutil/pllb"
+	"github.com/drone-runners/drone-runner-docker/util/syncutil/synccache"
 	"github.com/drone/runner-go/manifest"
-	"github.com/earthly/earthly/ast"
-	"github.com/earthly/earthly/ast/spec"
-	"github.com/earthly/earthly/cleanup"
-	"github.com/earthly/earthly/conslogging"
-	"github.com/earthly/earthly/util/gitutil"
-	"github.com/earthly/earthly/util/llbutil/pllb"
-	"github.com/earthly/earthly/util/syncutil/synccache"
+	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -99,8 +101,23 @@ func (r *Resolver) Resolve(ctx context.Context, gwClient gwclient.Client, ref do
 	d.Ref = gitutil.ReferenceWithGitMeta(ref, d.GitMetadata)
 	d.LocalDirs = localDirs
 	target := ref.(domain.Target)
+	fmt.Print(target)
 	if !strings.HasPrefix(ref.GetName(), DockerfileMetaTarget) {
-		d.Earthfile, err = r.parseTargetJsonfile(ctx, target.TargetASTJson)
+		file, _ := filepath.Abs("build-arg.ast.json")
+		jsonFile, err := os.Open(file)
+		// if we os.Open returns an error then handle it
+		if err != nil {
+			fmt.Println(err)
+		}
+		// defer the closing of our jsonFile so that we can parse it later on
+		defer jsonFile.Close()
+		byteValue, _ := ioutil.ReadAll(jsonFile)
+
+		d.Earthfile, err = r.parseEarthfile(ctx, d.BuildFilePath) // r.parseTargetJsonfile(ctx, string(byteValue[:]))
+
+		ef, _ := r.parseTargetJsonfile(ctx, string(byteValue[:]))
+		fmt.Print(ef)
+
 		if err != nil {
 			return nil, err
 		}
@@ -119,7 +136,7 @@ func (r *Resolver) parseEarthfile(ctx context.Context, path string) (spec.Earthf
 	}
 	ef := efValue.(spec.Earthfile)
 
-	ef = parseDronefile("engine/compiler/testdata/serial.yml")
+	//ef = parseDronefile("engine/compiler/testdata/serial.yml")
 	return ef, nil
 }
 

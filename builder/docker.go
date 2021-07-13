@@ -10,8 +10,8 @@ import (
 
 	"github.com/containerd/containerd/platforms"
 	"github.com/docker/distribution/reference"
-	"github.com/earthly/earthly/conslogging"
-	"github.com/earthly/earthly/util/llbutil"
+	"github.com/drone-runners/drone-runner-docker/conslogging"
+	"github.com/drone-runners/drone-runner-docker/util/llbutil"
 	"golang.org/x/sync/errgroup"
 
 	specs "github.com/opencontainers/image-spec/specs-go/v1"

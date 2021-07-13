@@ -16,7 +16,7 @@ var targetNameRegex = regexp.MustCompile(targetNamePattern)
 // Target is an earthly target identifier.
 type Target struct {
 	// Remote representation.
-	GitURL string `json:"gitUrl"` // e.g. "github.com/earthly/earthly/examples/go"
+	GitURL string `json:"gitUrl"` // e.g. "github.com/drone-runners/drone-runner-docker/examples/go"
 	Tag    string `json:"tag"`    // e.g. "main"
 	// Local representation. E.g. in "./some/path+something" this is "./some/path".
 	LocalPath string `json:"localPath"`
@@ -26,7 +26,7 @@ type Target struct {
 	// Target name. E.g. in "+something" this is "something".
 	Target string `json:"target"`
 
-	TargetASTJson string
+	TargetASTJson string `json:"TargetASTJson"`
 }
 
 // GetGitURL returns the GitURL portion of the command.

@@ -11,7 +11,7 @@ import (
 	"github.com/drone-runners/drone-runner-docker/domain"
 	"github.com/drone-runners/drone-runner-docker/states"
 	"github.com/drone-runners/drone-runner-docker/states/image"
-	"github.com/earthly/earthly/util/llbutil/pllb"
+	"github.com/drone-runners/drone-runner-docker/util/llbutil/pllb"
 	"github.com/moby/buildkit/client"
 	"github.com/moby/buildkit/client/llb"
 	gwclient "github.com/moby/buildkit/frontend/gateway/client"

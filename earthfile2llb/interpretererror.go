@@ -3,7 +3,7 @@ package earthfile2llb
 import (
 	"fmt"
 
-	"github.com/earthly/earthly/ast/spec"
+	"github.com/drone-runners/drone-runner-docker/ast/spec"
 	"github.com/pkg/errors"
 )
 
