@@ -72,6 +72,43 @@ func NewResolver(sessionID string, cleanCollection *cleanup.Collection, gitLooku
 	}
 }
 
+//// Resolve returns resolved context data for a given Earthly reference. If the reference is a target,
+//// then the context will include a build context and possibly additional local directories.
+//func (r *Resolver) Resolve(ctx context.Context, gwClient gwclient.Client, ref domain.Reference) (*Data, error) {
+//	if ref.IsUnresolvedImportReference() {
+//		return nil, errors.Errorf("cannot resolve non-dereferenced import ref %s", ref.String())
+//	}
+//	var d *Data
+//	var err error
+//	localDirs := make(map[string]string)
+//	if ref.IsRemote() {
+//		// Remote.
+//		d, err = r.gr.resolveEarthProject(ctx, gwClient, ref)
+//		if err != nil {
+//			return nil, err
+//		}
+//	} else {
+//		// Local.
+//		if _, isTarget := ref.(domain.Target); isTarget {
+//			localDirs[ref.GetLocalPath()] = ref.GetLocalPath()
+//		}
+//
+//		d, err = r.lr.resolveLocal(ctx, ref)
+//		if err != nil {
+//			return nil, err
+//		}
+//	}
+//	d.Ref = gitutil.ReferenceWithGitMeta(ref, d.GitMetadata)
+//	d.LocalDirs = localDirs
+//	if !strings.HasPrefix(ref.GetName(), DockerfileMetaTarget) {
+//		d.Earthfile, err = r.parseEarthfile(ctx, d.BuildFilePath)
+//		if err != nil {
+//			return nil, err
+//		}
+//	}
+//	return d, nil
+//}
+
 // Resolve returns resolved context data for a given Earthly reference. If the reference is a target,
 // then the context will include a build context and possibly additional local directories.
 func (r *Resolver) Resolve(ctx context.Context, gwClient gwclient.Client, ref domain.Reference) (*Data, error) {
@@ -103,20 +140,7 @@ func (r *Resolver) Resolve(ctx context.Context, gwClient gwclient.Client, ref do
 	target := ref.(domain.Target)
 	fmt.Print(target)
 	if !strings.HasPrefix(ref.GetName(), DockerfileMetaTarget) {
-		file, _ := filepath.Abs("build-arg.ast.json")
-		jsonFile, err := os.Open(file)
-		// if we os.Open returns an error then handle it
-		if err != nil {
-			fmt.Println(err)
-		}
-		// defer the closing of our jsonFile so that we can parse it later on
-		defer jsonFile.Close()
-		byteValue, _ := ioutil.ReadAll(jsonFile)
-
-		d.Earthfile, err = r.parseEarthfile(ctx, d.BuildFilePath) // r.parseTargetJsonfile(ctx, string(byteValue[:]))
-
-		ef, _ := r.parseTargetJsonfile(ctx, string(byteValue[:]))
-		fmt.Print(ef)
+		d.Earthfile, err = r.parseTargetJsonfile(ctx, d.BuildFilePath) // r.parseTargetJsonfile(ctx, string(byteValue[:]))
 
 		if err != nil {
 			return nil, err
@@ -140,10 +164,25 @@ func (r *Resolver) parseEarthfile(ctx context.Context, path string) (spec.Earthf
 	return ef, nil
 }
 
-func (r *Resolver) parseTargetJsonfile(ctx context.Context, jsonTarget string) (spec.Earthfile, error) {
+func (r *Resolver) parseTargetJsonfile(ctx context.Context, path string) (spec.Earthfile, error) {
 	var efile spec.Earthfile
-	err := json.Unmarshal([]byte(jsonTarget), &efile)
-	return efile, err
+	var err error
+	var efValue interface{}
+	efValue, err = r.parseCache.Do(ctx, path, func(ctx context.Context, k interface{}) (interface{}, error) {
+		file, _ := filepath.Abs("build-arg.ast.json")
+		jsonFile, err := os.Open(file)
+		defer jsonFile.Close()
+		byteValue, _ := ioutil.ReadAll(jsonFile)
+		// if we os.Open returns an error then handle it
+		if err != nil {
+			fmt.Println(err)
+		}
+		json.Unmarshal(byteValue, &efile)
+		return efile, nil
+	})
+	ef := efValue.(spec.Earthfile)
+
+	return ef, err
 }
 
 // Target ==> step

@@ -25,8 +25,6 @@ type Target struct {
 
 	// Target name. E.g. in "+something" this is "something".
 	Target string `json:"target"`
-
-	TargetASTJson string `json:"TargetASTJson"`
 }
 
 // GetGitURL returns the GitURL portion of the command.
@@ -121,16 +119,5 @@ func ParseTarget(fullTargetName string) (Target, error) {
 		LocalPath: localPath,
 		ImportRef: importRef,
 		Target:    target,
-	}, nil
-}
-
-func ParseJsonTarget(targetASTJson string) (Target, error) {
-	return Target{
-		GitURL:        "",
-		Tag:           "",
-		LocalPath:     "",
-		ImportRef:     "",
-		Target:        "",
-		TargetASTJson: targetASTJson,
 	}, nil
 }

@@ -1,4 +1,4 @@
-module github.com/drone-runners/drone-runner-docker/examples/go
+module github.com/earthly/earthly/examples/go
 
 go 1.13
 
