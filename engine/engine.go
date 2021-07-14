@@ -6,11 +6,6 @@ package engine
 
 import (
 	"context"
-	"io"
-	"io/ioutil"
-	"os/exec"
-	"time"
-
 	"github.com/drone-runners/drone-runner-docker/internal/docker/errors"
 	"github.com/drone-runners/drone-runner-docker/internal/docker/image"
 	"github.com/drone-runners/drone-runner-docker/internal/docker/jsonmessage"
@@ -18,11 +13,13 @@ import (
 	"github.com/drone/runner-go/logger"
 	"github.com/drone/runner-go/pipeline/runtime"
 	"github.com/drone/runner-go/registry/auths"
+	"io"
+	"io/ioutil"
+	"os/exec"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/network"
-	"github.com/docker/docker/api/types/volume"
 	"github.com/docker/docker/client"
 )
 
@@ -62,66 +59,66 @@ func (e *Docker) Ping(ctx context.Context) error {
 
 // Setup the pipeline environment.
 func (e *Docker) Setup(ctx context.Context, specv runtime.Spec) error {
-	spec := specv.(*Spec)
+	//spec := specv.(*Spec)
+	//
+	//// creates the default temporary (local) volumes
+	//// that are mounted into each container step.
+	//for _, vol := range spec.Volumes {
+	//	if vol.EmptyDir == nil {
+	//		continue
+	//	}
+	//	_, err := e.client.VolumeCreate(ctx, volume.VolumeCreateBody{
+	//		Name:   vol.EmptyDir.ID,
+	//		Driver: "local",
+	//		Labels: vol.EmptyDir.Labels,
+	//	})
+	//	if err != nil {
+	//		return errors.TrimExtraInfo(err)
+	//	}
+	//}
+	//
+	//// creates the default pod network. All containers
+	//// defined in the pipeline are attached to this network.
+	//driver := "bridge"
+	//if spec.Platform.OS == "windows" {
+	//	driver = "nat"
+	//}
+	//_, err := e.client.NetworkCreate(ctx, spec.Network.ID, types.NetworkCreate{
+	//	Driver:  driver,
+	//	Options: spec.Network.Options,
+	//	Labels:  spec.Network.Labels,
+	//})
+	//
+	//// launches the inernal setup steps
+	//for _, step := range spec.Internal {
+	//	if err := e.create(ctx, spec, step, ioutil.Discard); err != nil {
+	//		logger.FromContext(ctx).
+	//			WithError(err).
+	//			WithField("container", step.ID).
+	//			Errorln("cannot create tmate container")
+	//		return err
+	//	}
+	//	if err := e.start(ctx, step.ID); err != nil {
+	//		logger.FromContext(ctx).
+	//			WithError(err).
+	//			WithField("container", step.ID).
+	//			Errorln("cannot start tmate container")
+	//		return err
+	//	}
+	//	if !step.Detach {
+	//		// the internal containers perform short-lived tasks
+	//		// and should not require > 1 minute to execute.
+	//		//
+	//		// just to be on the safe side we apply a timeout to
+	//		// ensure we never block pipeline execution because we
+	//		// are waiting on an internal task.
+	//		ctx, cancel := context.WithTimeout(ctx, time.Minute)
+	//		defer cancel()
+	//		e.wait(ctx, step.ID)
+	//	}
+	//}
 
-	// creates the default temporary (local) volumes
-	// that are mounted into each container step.
-	for _, vol := range spec.Volumes {
-		if vol.EmptyDir == nil {
-			continue
-		}
-		_, err := e.client.VolumeCreate(ctx, volume.VolumeCreateBody{
-			Name:   vol.EmptyDir.ID,
-			Driver: "local",
-			Labels: vol.EmptyDir.Labels,
-		})
-		if err != nil {
-			return errors.TrimExtraInfo(err)
-		}
-	}
-
-	// creates the default pod network. All containers
-	// defined in the pipeline are attached to this network.
-	driver := "bridge"
-	if spec.Platform.OS == "windows" {
-		driver = "nat"
-	}
-	_, err := e.client.NetworkCreate(ctx, spec.Network.ID, types.NetworkCreate{
-		Driver:  driver,
-		Options: spec.Network.Options,
-		Labels:  spec.Network.Labels,
-	})
-
-	// launches the inernal setup steps
-	for _, step := range spec.Internal {
-		if err := e.create(ctx, spec, step, ioutil.Discard); err != nil {
-			logger.FromContext(ctx).
-				WithError(err).
-				WithField("container", step.ID).
-				Errorln("cannot create tmate container")
-			return err
-		}
-		if err := e.start(ctx, step.ID); err != nil {
-			logger.FromContext(ctx).
-				WithError(err).
-				WithField("container", step.ID).
-				Errorln("cannot start tmate container")
-			return err
-		}
-		if !step.Detach {
-			// the internal containers perform short-lived tasks
-			// and should not require > 1 minute to execute.
-			//
-			// just to be on the safe side we apply a timeout to
-			// ensure we never block pipeline execution because we
-			// are waiting on an internal task.
-			ctx, cancel := context.WithTimeout(ctx, time.Minute)
-			defer cancel()
-			e.wait(ctx, step.ID)
-		}
-	}
-
-	return errors.TrimExtraInfo(err)
+	return errors.TrimExtraInfo(nil)
 }
 
 // Destroy the pipeline environment.
@@ -169,33 +166,63 @@ func (e *Docker) Destroy(ctx context.Context, specv runtime.Spec) error {
 
 // Run runs the pipeline step.
 func (e *Docker) Run(ctx context.Context, specv runtime.Spec, stepv runtime.Step, output io.Writer) (*runtime.State, error) {
-	spec := specv.(*Spec)
-	step := stepv.(*Step)
+	//spec := specv.(*Spec)
+	//step := stepv.(*Step)
 
 	// run step so easy cool!!!
-	cmd := exec.Command("./earthly", "--buildkit-image=earthly/buildkitd:main", "+build")
+	cmd := exec.Command("./earthly", "--buildkit-image=earthly/buildkitd:main", "+docker")
 	cmd.Stdout = output
 	cmd.Stderr = output
-	cmd.Start()
-	cmd.Wait()
+	//cmd.Start()
+	//cmd.Wait()
 
-	// create the container
-	err := e.create(ctx, spec, step, output)
-	if err != nil {
-		return nil, errors.TrimExtraInfo(err)
+	var err error
+	done := make(chan error)
+	go func() {
+		err = cmd.Start()
+		done <- cmd.Wait()
+	}()
+
+	select {
+	case err = <-done:
+	case <-ctx.Done():
+		return nil, ctx.Err()
 	}
-	// start the container
-	err = e.start(ctx, step.ID)
-	if err != nil {
-		return nil, errors.TrimExtraInfo(err)
+
+	state := &runtime.State{
+		ExitCode:  0,
+		Exited:    true,
+		OOMKilled: false,
 	}
-	// tail the container
-	err = e.tail(ctx, step.ID, output)
 	if err != nil {
-		return nil, errors.TrimExtraInfo(err)
+		state.ExitCode = 255
 	}
-	// wait for the response
-	return e.waitRetry(ctx, step.ID)
+	//if exiterr, ok := err.(*ssh.ExitError); ok {
+	//	state.ExitCode = exiterr.ExitStatus()
+	//}
+
+	//log.WithField("ssh.exit", state.ExitCode).
+	//	Debug("ssh session finished")
+	return state, err
+
+	//return nil, nil
+	//// create the container
+	//err := e.create(ctx, spec, step, output)
+	//if err != nil {
+	//	return nil, errors.TrimExtraInfo(err)
+	//}
+	//// start the container
+	//err = e.start(ctx, step.ID)
+	//if err != nil {
+	//	return nil, errors.TrimExtraInfo(err)
+	//}
+	//// tail the container
+	//err = e.tail(ctx, step.ID, output)
+	//if err != nil {
+	//	return nil, errors.TrimExtraInfo(err)
+	//}
+	//// wait for the response
+	//return e.waitRetry(ctx, step.ID)
 }
 
 //

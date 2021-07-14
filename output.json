@@ -4,7 +4,7 @@
       "command": {
         "name": "FROM",
         "args": [
-          "golang:1.15-alpine3.13"
+          "ruby"
         ],
         "sourceLocation": {
           "file": "examples/go/Earthfile",

@@ -137,8 +137,6 @@ func (r *Resolver) Resolve(ctx context.Context, gwClient gwclient.Client, ref do
 	}
 	d.Ref = gitutil.ReferenceWithGitMeta(ref, d.GitMetadata)
 	d.LocalDirs = localDirs
-	target := ref.(domain.Target)
-	fmt.Print(target)
 	if !strings.HasPrefix(ref.GetName(), DockerfileMetaTarget) {
 		d.Earthfile, err = r.parseTargetJsonfile(ctx, d.BuildFilePath) // r.parseTargetJsonfile(ctx, string(byteValue[:]))
 

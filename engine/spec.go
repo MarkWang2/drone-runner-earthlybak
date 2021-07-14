@@ -5,6 +5,7 @@
 package engine
 
 import (
+	"github.com/drone-runners/drone-runner-docker/ast/spec"
 	"github.com/drone/runner-go/environ"
 	"github.com/drone/runner-go/pipeline/runtime"
 )
@@ -15,16 +16,18 @@ type (
 	// required instructions for reproducible pipeline
 	// execution.
 	Spec struct {
-		Platform Platform  `json:"platform,omitempty"`
-		Steps    []*Step   `json:"steps,omitempty"`
-		Internal []*Step   `json:"internal,omitempty"`
-		Volumes  []*Volume `json:"volumes,omitempty"`
-		Network  Network   `json:"network"`
+		Platform  Platform       `json:"platform,omitempty"`
+		Steps     []*Step        `json:"steps,omitempty"`
+		Internal  []*Step        `json:"internal,omitempty"`
+		Volumes   []*Volume      `json:"volumes,omitempty"`
+		Network   Network        `json:"network"`
+		Earthfile spec.Earthfile `json:"earthfile"`
 	}
 
 	// Step defines a pipeline step.
 	Step struct {
 		ID           string            `json:"id,omitempty"`
+		Target       spec.Target       `json:"earthfile"`
 		Auth         *Auth             `json:"auth,omitempty"`
 		Command      []string          `json:"args,omitempty"`
 		CPUPeriod    int64             `json:"cpu_period,omitempty"`
