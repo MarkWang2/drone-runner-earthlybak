@@ -44,11 +44,21 @@ func cloneParams(src manifest.Clone) map[string]string {
 // helper function creates a default container configuration
 // for the clone stage. The clone stage is automatically
 // added to each pipeline.
-func createClone(src *resource.Pipeline) *engine.Step {
+func createClone2(src *resource.Pipeline) *engine.Step {
 	return &engine.Step{
 		Name:      cloneStepName,
 		Image:     cloneImage(src.Platform),
 		RunPolicy: runtime.RunAlways,
 		Envs:      cloneParams(src.Clone),
+	}
+}
+
+func createClone(src *resource.Pipeline, path string) *engine.Step {
+	return &engine.Step{
+		Name:       cloneStepName,
+		Image:      cloneImage(src.Platform),
+		RunPolicy:  runtime.RunAlways,
+		Envs:       cloneParams(src.Clone),
+		WorkingDir: path,
 	}
 }

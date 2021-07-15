@@ -122,6 +122,7 @@ func (e *Docker) Setup(ctx context.Context, specv runtime.Spec) error {
 }
 
 // Destroy the pipeline environment.
+// todo: remove working dir
 func (e *Docker) Destroy(ctx context.Context, specv runtime.Spec) error {
 	spec := specv.(*Spec)
 
@@ -167,15 +168,20 @@ func (e *Docker) Destroy(ctx context.Context, specv runtime.Spec) error {
 // Run runs the pipeline step.
 func (e *Docker) Run(ctx context.Context, specv runtime.Spec, stepv runtime.Step, output io.Writer) (*runtime.State, error) {
 	//spec := specv.(*Spec)
-	//step := stepv.(*Step)
-
-	// run step so easy cool!!!
-	cmd := exec.Command("./earthly", "--buildkit-image=earthly/buildkitd:main", "+docker")
-	cmd.Stdout = output
-	cmd.Stderr = output
-	//cmd.Start()
-	//cmd.Wait()
-
+	step := stepv.(*Step)
+	dir := step.WorkingDir // todo: We can move WorkingDir to spec
+	var cmd *exec.Cmd
+	if step.Name == "clone" {
+		// random art1
+		cmd = exec.Command("earthly", "--artifact", "github.com/earthly/earthly/examples/tutorial/go:main+part1/part1", "./"+dir)
+		cmd.Stdout = output
+		cmd.Stderr = output
+	} else {
+		//cmd = exec.Command("./earthly", "--buildkit-image=earthly/buildkitd:main", "+docker")
+		cmd = exec.Command("earthly", "./"+dir+"+docker")
+		cmd.Stdout = output
+		cmd.Stderr = output
+	}
 	var err error
 	done := make(chan error)
 	go func() {
