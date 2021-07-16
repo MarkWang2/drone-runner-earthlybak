@@ -182,7 +182,7 @@ func (e *Docker) Run(ctx context.Context, specv runtime.Spec, stepv runtime.Step
 		efByes, _ := json.Marshal(spec.Earthfile)
 		ats := string(efByes)
 		fmt.Print(ats)
-		cmd = exec.Command("./earthly", "--buildkit-image=earthly/buildkitd:main", "+docker", "--targetAtsJson", string(efByes))
+		cmd = exec.Command("./earthly", "--buildkit-image", "earthly/buildkitd:main", "--target-ats-json", string(efByes), "+test")
 		//cmd = exec.Command("earthly", "./"+dir+"+docker")
 		cmd.Stdout = output
 		cmd.Stderr = output

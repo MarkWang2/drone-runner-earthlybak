@@ -25,6 +25,8 @@ type Target struct {
 
 	// Target name. E.g. in "+something" this is "something".
 	Target string `json:"target"`
+
+	FromArgs bool
 }
 
 // GetGitURL returns the GitURL portion of the command.

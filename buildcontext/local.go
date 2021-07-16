@@ -2,8 +2,6 @@ package buildcontext
 
 import (
 	"context"
-	"path/filepath"
-
 	"github.com/drone-runners/drone-runner-docker/analytics"
 	"github.com/drone-runners/drone-runner-docker/conslogging"
 	"github.com/drone-runners/drone-runner-docker/domain"
@@ -13,6 +11,7 @@ import (
 	"github.com/drone-runners/drone-runner-docker/util/syncutil/synccache"
 	"github.com/moby/buildkit/client/llb"
 	"github.com/pkg/errors"
+	"path/filepath"
 )
 
 type localResolver struct {
@@ -50,8 +49,12 @@ func (lr *localResolver) resolveLocal(ctx context.Context, ref domain.Reference)
 		return nil, err
 	}
 	metadata := metadataValue.(*gitutil.GitMetadata)
-
-	buildFilePath, err := detectBuildFile(ref, filepath.FromSlash(ref.GetLocalPath()))
+	var buildFilePath string
+	target := ref.(domain.Target)
+	if !target.FromArgs {
+		buildFilePath, err = detectBuildFile(ref, filepath.FromSlash(ref.GetLocalPath()))
+	}
+	//
 	if err != nil {
 		return nil, err
 	}
