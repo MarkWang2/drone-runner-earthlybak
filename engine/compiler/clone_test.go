@@ -93,7 +93,7 @@ func TestCloneCreate(t *testing.T) {
 		Envs:      map[string]string{"PLUGIN_DEPTH": "50"},
 	}
 	src := &resource.Pipeline{Clone: manifest.Clone{Depth: 50}}
-	got := createClone(src)
+	got := createClone(src, "")
 	if diff := cmp.Diff(got, want); len(diff) != 0 {
 		t.Errorf(diff)
 	}

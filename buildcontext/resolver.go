@@ -167,7 +167,7 @@ func (r *Resolver) parseTargetJsonfile(ctx context.Context, path string) (spec.E
 	var err error
 	var efValue interface{}
 	efValue, err = r.parseCache.Do(ctx, path, func(ctx context.Context, k interface{}) (interface{}, error) {
-		file, _ := filepath.Abs("build-arg.ast.json")
+		file, _ := filepath.Abs("output.json")
 		jsonFile, err := os.Open(file)
 		defer jsonFile.Close()
 		byteValue, _ := ioutil.ReadAll(jsonFile)

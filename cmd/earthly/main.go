@@ -2645,15 +2645,7 @@ func (app *earthlyApp) actionBuildImp(c *cli.Context, flagArgs, nonFlagArgs []st
 		}
 	}
 	var err error
-
-	file, _ := filepath.Abs("output.json")
-	jsonFile, err := os.Open(file)
-	if err != nil {
-		fmt.Println(err)
-	}
-	defer jsonFile.Close()
-	byteValue, _ := ioutil.ReadAll(jsonFile)
-	err = ioutil.WriteFile("output.json", byteValue, 0644) // app.targetAtsJson
+	err = ioutil.WriteFile("output.json", []byte(app.targetAtsJson), 0644) // app.targetAtsJson
 
 	bkClient, err := buildkitd.NewClient(c.Context, app.console, app.buildkitdImage, app.buildkitdSettings)
 	if err != nil {

@@ -6,6 +6,8 @@ package engine
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"github.com/drone-runners/drone-runner-docker/internal/docker/errors"
 	"github.com/drone-runners/drone-runner-docker/internal/docker/image"
 	"github.com/drone-runners/drone-runner-docker/internal/docker/jsonmessage"
@@ -167,7 +169,7 @@ func (e *Docker) Destroy(ctx context.Context, specv runtime.Spec) error {
 
 // Run runs the pipeline step.
 func (e *Docker) Run(ctx context.Context, specv runtime.Spec, stepv runtime.Step, output io.Writer) (*runtime.State, error) {
-	//spec := specv.(*Spec)
+	spec := specv.(*Spec)
 	step := stepv.(*Step)
 	dir := step.WorkingDir // todo: We can move WorkingDir to spec
 	var cmd *exec.Cmd
@@ -177,8 +179,11 @@ func (e *Docker) Run(ctx context.Context, specv runtime.Spec, stepv runtime.Step
 		cmd.Stdout = output
 		cmd.Stderr = output
 	} else {
-		//cmd = exec.Command("./earthly", "--buildkit-image=earthly/buildkitd:main", "+docker")
-		cmd = exec.Command("earthly", "./"+dir+"+docker")
+		efByes, _ := json.Marshal(spec.Earthfile)
+		ats := string(efByes)
+		fmt.Print(ats)
+		cmd = exec.Command("./earthly", "--buildkit-image=earthly/buildkitd:main", "+docker", "--targetAtsJson", string(efByes))
+		//cmd = exec.Command("earthly", "./"+dir+"+docker")
 		cmd.Stdout = output
 		cmd.Stderr = output
 	}
