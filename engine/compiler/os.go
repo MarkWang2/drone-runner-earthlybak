@@ -12,9 +12,16 @@ import (
 	"github.com/drone/runner-go/shell/powershell"
 )
 
-func Tempdir() string {
+// helper function returns the base temporary directory based
+// on the target platform.
+func tempdir(os string) string {
 	dir := fmt.Sprintf("drone-%s", random())
-	return dir
+	switch os {
+	case "windows":
+		return join(os, "C:\\Windows\\Temp", dir)
+	default:
+		return join(os, "/tmp", dir)
+	}
 }
 
 // helper function joins the file paths.

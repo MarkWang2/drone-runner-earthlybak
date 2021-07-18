@@ -54,7 +54,6 @@ func (lr *localResolver) resolveLocal(ctx context.Context, ref domain.Reference)
 	if !target.FromArgs {
 		buildFilePath, err = detectBuildFile(ref, filepath.FromSlash(ref.GetLocalPath()))
 	}
-	//
 	if err != nil {
 		return nil, err
 	}

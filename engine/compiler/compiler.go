@@ -6,6 +6,7 @@ package compiler
 
 import (
 	"context"
+	"fmt"
 	"github.com/drone-runners/drone-runner-docker/ast/spec"
 	"github.com/drone-runners/drone-runner-docker/engine"
 	"github.com/drone-runners/drone-runner-docker/engine/resource"
@@ -125,8 +126,10 @@ func (c *Compiler) Compile(ctx context.Context, args runtime.CompilerArgs) runti
 	pipeline := args.Pipeline.(*resource.Pipeline)
 	targets := []spec.Target{}
 	dspec := &engine.Spec{}
+	os := pipeline.Platform.OS
 
-	_, _, full := createWorkspace(pipeline)
+	base, path, full := createWorkspace(pipeline)
+	dspec.Root = tempdir(os)
 
 	// reset the workspace path if attempting to mount
 	// volumes that are internal use only.
@@ -144,23 +147,134 @@ func (c *Compiler) Compile(ctx context.Context, args runtime.CompilerArgs) runti
 		Event:    args.Build.Event,
 		Branch:   args.Build.Target,
 	}
-	step := createClone(pipeline, full)
 
-	dspec.Steps = append(dspec.Steps, step)
+	//rp := spec.Block{}
+	//imageCmd := spec.Command{Name: "FROM", Args: []string{"step.Image"}}
+	//imageSM := spec.Statement{&imageCmd, nil, nil, nil, nil}
+	//rp = append(rp, imageSM)
+
+	// list the global environment variables
+	globals, _ := c.Environ.List(ctx, &provider.Request{
+		Build: args.Build,
+		Repo:  args.Repo,
+	})
+
+	// create the default environment variables.
+	envs := environ.Combine(
+		provider.ToMap(
+			provider.FilterUnmasked(globals),
+		),
+		args.Build.Params,
+		pipeline.Environment,
+		environ.Proxy(),
+		environ.System(args.System),
+		environ.Repo(args.Repo),
+		environ.Build(args.Build),
+		environ.Stage(args.Stage),
+		environ.Link(args.Repo, args.Build, args.System),
+		clone.Environ(clone.Config{
+			SkipVerify: pipeline.Clone.SkipVerify,
+			Trace:      pipeline.Clone.Trace,
+			User: clone.User{
+				Name:  args.Build.AuthorName,
+				Email: args.Build.AuthorEmail,
+			},
+		}),
+	)
+
+	//// create network reference variables
+	//envs["DRONE_DOCKER_NETWORK_ID"] = spec.Network.ID
+
+	// create the workspace variables
+	envs["DRONE_WORKSPACE"] = full
+	envs["DRONE_WORKSPACE_BASE"] = base
+	envs["DRONE_WORKSPACE_PATH"] = path
+
+	// create the .netrc environment variables if not
+	// explicitly disabled
+	if c.NetrcCloneOnly == false {
+		envs = environ.Combine(envs, environ.Netrc(args.Netrc))
+	}
+
+	// create the clone step
+	if pipeline.Clone.Disable == false {
+		step := createClone(pipeline, full) // need createClone(pipeline)
+		step.ID = random()
+		step.Envs = environ.Combine(envs, step.Envs)
+		step.WorkingDir = full // todo:
+		step.Envs = environ.Combine(step.Envs, environ.Netrc(args.Netrc))
+
+		rp := spec.Block{}
+		imageCmd := spec.Command{Name: "FROM", Args: []string{step.Image}}
+		imageSM := spec.Statement{&imageCmd, nil, nil, nil, nil}
+		rp = append(rp, imageSM)
+
+		workDirCmd := spec.Command{Name: "WORKDIR", Args: []string{"drone-runner-earthly"}} // step.WorkingDir
+		workDirSM := spec.Statement{&workDirCmd, nil, nil, nil, nil}
+		rp = append(rp, workDirSM)
+
+		for key, value := range envs {
+			if key == "DRONE_WORKSPACE" {
+				cmd := spec.Command{Name: "ENV", Args: []string{"DRONE_WORKSPACE", "=", "drone-runner-earthly"}}
+				st := spec.Statement{&cmd, nil, nil, nil, nil}
+				rp = append(rp, st)
+			} else {
+				cmd := spec.Command{Name: "ENV", Args: []string{key, "=", value}}
+				st := spec.Statement{&cmd, nil, nil, nil, nil}
+				rp = append(rp, st)
+			}
+		}
+
+		epCmd := spec.Command{Name: "ENTRYPOINT", Args: []string{"/usr/local/bin/clone"}}
+		epSM := spec.Statement{&epCmd, nil, nil, nil, nil}
+		rp = append(rp, epSM)
+
+		statement := spec.Statement{&spec.Command{Name: "RUN", Args: []string{"sh", "/usr/local/bin/clone"}}, nil, nil, nil, nil}
+		rp = append(rp, statement)
+		saveSt := spec.Statement{&spec.Command{Name: "SAVE ARTIFACT", Args: []string{".", "AS", "LOCAL", "mark"}}, nil, nil, nil, nil}
+		rp = append(rp, saveSt)
+
+		//"ENTRYPOINT"
+		target := spec.Target{step.Name, rp, nil}
+		targets = append(targets, target)
+		step.Target = target
+		//dstep := &engine.Step{
+		//	Name:   step.Name,
+		//	Target: target,
+		//}
+		//setupWorkdir(step, dstep, full)
+		//
+		//if !step.When.Match(match) {
+		//	dstep.RunPolicy = runtime.RunNever
+		//}
+		dspec.Steps = append(dspec.Steps, step)
+	}
+	//
+	//step := createClone(pipeline, full)
+	//dspec.Steps = append(dspec.Steps, step)
 	for _, step := range pipeline.Steps {
 		rp := spec.Block{}
 		imageCmd := spec.Command{Name: "FROM", Args: []string{step.Image}}
 		imageSM := spec.Statement{&imageCmd, nil, nil, nil, nil}
 		rp = append(rp, imageSM)
 
+		for key, value := range envs {
+			fmt.Print(key)
+			fmt.Print(value)
+			//i.converter.Env(ctx, key, value)
+			cmd := spec.Command{Name: "ENV", Args: []string{key, "=", value}}
+			st := spec.Statement{&cmd, nil, nil, nil, nil}
+			rp = append(rp, st)
+		}
+
 		//workDirCmd := spec.Command{Name: "WORKDIR", Args: []string{"/drone-runner-earthly"}} // step.WorkingDir
 		//workDirSM := spec.Statement{&workDirCmd, nil, nil, nil, nil}
 		//rp = append(rp, workDirSM)
 
-		//// done yaml add copy make drone use as dockerfile way.
-		//cpCmd := spec.Command{Name: "COPY", Args: []string{"go.mod", "go.sum", "./"}}
-		//cpSM := spec.Statement{&cpCmd, nil, nil, nil, nil}
-		//rp = append(rp, cpSM)
+		// done yaml add copy make drone use as dockerfile way.
+		cpCmd := spec.Command{Name: "COPY", Args: []string{".", "./"}}
+		cpSM := spec.Statement{&cpCmd, nil, nil, nil, nil}
+		rp = append(rp, cpSM)
 
 		for _, cmd := range step.Commands {
 			statement := spec.Statement{&spec.Command{Name: "RUN", Args: []string{cmd}}, nil, nil, nil, nil}
