@@ -48,8 +48,6 @@ type execCommand struct {
 	Environ    map[string]string
 	Labels     map[string]string
 	Secrets    map[string]string
-	Resources  compiler.Resources
-	Tmate      compiler.Tmate
 	Clone      bool
 	Config     string
 	Pretty     bool
@@ -118,14 +116,10 @@ func (c *execCommand) run(*kingpin.ParseContext) error {
 
 	// compile the pipeline to an intermediate representation.
 	comp := &compiler.Compiler{
-		Environ:    provider.Static(c.Environ),
-		Labels:     c.Labels,
-		Resources:  c.Resources,
-		Tmate:      c.Tmate,
-		Privileged: append(c.Privileged, compiler.Privileged...),
-		Networks:   c.Networks,
-		Volumes:    c.Volumes,
-		Secret:     secret.StaticVars(c.Secrets),
+		Environ: provider.Static(c.Environ),
+		Labels:  c.Labels,
+		Volumes: c.Volumes,
+		Secret:  secret.StaticVars(c.Secrets),
 		Registry: registry.Combine(
 			registry.File(c.Config),
 		),
@@ -299,27 +293,6 @@ func registerExec(app *kingpin.Application) {
 	cmd.Flag("volumes", "container volumes").
 		StringMapVar(&c.Volumes)
 
-	cmd.Flag("privileged", "privileged docker images").
-		StringsVar(&c.Privileged)
-
-	cmd.Flag("cpu-period", "container cpu period").
-		Int64Var(&c.Resources.CPUPeriod)
-
-	cmd.Flag("cpu-quota", "container cpu quota").
-		Int64Var(&c.Resources.CPUQuota)
-
-	cmd.Flag("cpu-set", "container cpu set").
-		StringsVar(&c.Resources.CPUSet)
-
-	cmd.Flag("cpu-shares", "container cpu shares").
-		Int64Var(&c.Resources.CPUShares)
-
-	cmd.Flag("memory", "container memory limit").
-		Int64Var(&c.Resources.Memory)
-
-	cmd.Flag("memory-swap", "container memory swap limit").
-		Int64Var(&c.Resources.MemorySwap)
-
 	cmd.Flag("public-key", "public key file path").
 		ExistingFileVar(&c.PublicKey)
 
@@ -328,28 +301,6 @@ func registerExec(app *kingpin.Application) {
 
 	cmd.Flag("docker-config", "path to the docker config file").
 		StringVar(&c.Config)
-
-	cmd.Flag("tmate-image", "tmate docker image").
-		Default("drone/drone-runner-docker:1").
-		StringVar(&c.Tmate.Image)
-
-	cmd.Flag("tmate-enabled", "tmate enabled").
-		BoolVar(&c.Tmate.Enabled)
-
-	cmd.Flag("tmate-server-host", "tmate server host").
-		StringVar(&c.Tmate.Server)
-
-	cmd.Flag("tmate-server-port", "tmate server port").
-		StringVar(&c.Tmate.Port)
-
-	cmd.Flag("tmate-server-rsa-fingerprint", "tmate server rsa fingerprint").
-		StringVar(&c.Tmate.RSA)
-
-	cmd.Flag("tmate-server-ed25519-fingerprint", "tmate server rsa fingerprint").
-		StringVar(&c.Tmate.ED25519)
-
-	cmd.Flag("tmate-authorized-keys", "tmate authorized keys").
-		StringVar(&c.Tmate.AuthorizedKeys)
 
 	cmd.Flag("debug", "enable debug logging").
 		BoolVar(&c.Debug)

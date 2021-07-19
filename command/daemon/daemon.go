@@ -127,29 +127,8 @@ func (c *daemonCommand) run(*kingpin.ParseContext) error {
 		),
 		Compiler: &compiler.Compiler{
 			Clone:          config.Runner.Clone,
-			Privileged:     append(config.Runner.Privileged, compiler.Privileged...),
-			Networks:       config.Runner.Networks,
-			NetworkOpts:    config.Runner.NetworkOpts,
 			NetrcCloneOnly: config.Netrc.CloneOnly,
 			Volumes:        config.Runner.Volumes,
-			Resources: compiler.Resources{
-				Memory:     config.Resources.Memory,
-				MemorySwap: config.Resources.MemorySwap,
-				CPUQuota:   config.Resources.CPUQuota,
-				CPUPeriod:  config.Resources.CPUPeriod,
-				CPUShares:  config.Resources.CPUShares,
-				CPUSet:     config.Resources.CPUSet,
-				ShmSize:    config.Resources.ShmSize,
-			},
-			Tmate: compiler.Tmate{
-				Image:          config.Tmate.Image,
-				Enabled:        config.Tmate.Enabled,
-				Server:         config.Tmate.Server,
-				Port:           config.Tmate.Port,
-				RSA:            config.Tmate.RSA,
-				ED25519:        config.Tmate.ED25519,
-				AuthorizedKeys: config.Tmate.AuthorizedKeys,
-			},
 			Environ: provider.Combine(
 				provider.Static(config.Runner.Environ),
 				provider.External(
