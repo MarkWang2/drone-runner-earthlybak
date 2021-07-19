@@ -130,12 +130,8 @@ func (c *Compiler) Compile(ctx context.Context, args runtime.CompilerArgs) runti
 
 	base, path, full := createWorkspace(pipeline)
 	dspec.Root = tempdir(os)
-
-	// reset the workspace path if attempting to mount
-	// volumes that are internal use only.
-	if container.IsRestrictedVolume(full) {
-		full = "/drone/src"
-	}
+	sourcedir := join(os, dspec.Root, "drone", "src")
+	dspec.WorkingDir = sourcedir
 
 	match := manifest.Match{
 		Action:   args.Build.Action,
@@ -201,7 +197,7 @@ func (c *Compiler) Compile(ctx context.Context, args runtime.CompilerArgs) runti
 		step := createClone(pipeline, full) // need createClone(pipeline)
 		step.ID = random()
 		step.Envs = environ.Combine(envs, step.Envs)
-		step.WorkingDir = full // todo:
+		step.WorkingDir = sourcedir
 		step.Envs = environ.Combine(step.Envs, environ.Netrc(args.Netrc))
 
 		rp := spec.Block{}
@@ -209,13 +205,13 @@ func (c *Compiler) Compile(ctx context.Context, args runtime.CompilerArgs) runti
 		imageSM := spec.Statement{&imageCmd, nil, nil, nil, nil}
 		rp = append(rp, imageSM)
 
-		workDirCmd := spec.Command{Name: "WORKDIR", Args: []string{"drone-runner-earthly"}} // step.WorkingDir
+		workDirCmd := spec.Command{Name: "WORKDIR", Args: []string{sourcedir}} // step.WorkingDir
 		workDirSM := spec.Statement{&workDirCmd, nil, nil, nil, nil}
 		rp = append(rp, workDirSM)
 
 		for key, value := range envs {
 			if key == "DRONE_WORKSPACE" {
-				cmd := spec.Command{Name: "ENV", Args: []string{"DRONE_WORKSPACE", "=", "drone-runner-earthly"}}
+				cmd := spec.Command{Name: "ENV", Args: []string{"DRONE_WORKSPACE", "=", sourcedir}}
 				st := spec.Statement{&cmd, nil, nil, nil, nil}
 				rp = append(rp, st)
 			} else {
@@ -231,7 +227,7 @@ func (c *Compiler) Compile(ctx context.Context, args runtime.CompilerArgs) runti
 
 		statement := spec.Statement{&spec.Command{Name: "RUN", Args: []string{"sh", "/usr/local/bin/clone"}}, nil, nil, nil, nil}
 		rp = append(rp, statement)
-		saveSt := spec.Statement{&spec.Command{Name: "SAVE ARTIFACT", Args: []string{".", "AS", "LOCAL", "mark"}}, nil, nil, nil, nil}
+		saveSt := spec.Statement{&spec.Command{Name: "SAVE ARTIFACT", Args: []string{".", "AS", "LOCAL", sourcedir}}, nil, nil, nil, nil}
 		rp = append(rp, saveSt)
 
 		//"ENTRYPOINT"

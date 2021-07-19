@@ -171,14 +171,14 @@ func (e *Docker) Destroy(ctx context.Context, specv runtime.Spec) error {
 func (e *Docker) Run(ctx context.Context, specv runtime.Spec, stepv runtime.Step, output io.Writer) (*runtime.State, error) {
 	spec := specv.(*Spec)
 	step := stepv.(*Step)
-	dir := step.WorkingDir // todo: We can move WorkingDir to spec
 	var cmd *exec.Cmd
+	dir := spec.WorkingDir
 	efByes, _ := json.Marshal(spec.Earthfile)
 	ats := string(efByes)
 	fmt.Print(ats)
-	targetName := "./" + dir + "+" + step.Name
+	targetName := dir + "+" + step.Name
 	fmt.Print(targetName)
-	cmd = exec.Command("./earthly", "--buildkit-image", "earthly/buildkitd:main", "--target-ats-json", string(efByes), "+clone")
+	cmd = exec.Command("./earthly", "--buildkit-image", "earthly/buildkitd:main", "--target-ats-json", string(efByes), targetName)
 	cmd.Stdout = output
 	cmd.Stderr = output
 	var err error

@@ -16,13 +16,14 @@ type (
 	// required instructions for reproducible pipeline
 	// execution.
 	Spec struct {
-		Platform  Platform       `json:"platform,omitempty"`
-		Steps     []*Step        `json:"steps,omitempty"`
-		Internal  []*Step        `json:"internal,omitempty"`
-		Volumes   []*Volume      `json:"volumes,omitempty"`
-		Network   Network        `json:"network"`
-		Earthfile spec.Earthfile `json:"earthfile"`
-		Root      string         `json:"working_dir,omitempty"`
+		Platform   Platform       `json:"platform,omitempty"`
+		Steps      []*Step        `json:"steps,omitempty"`
+		Internal   []*Step        `json:"internal,omitempty"`
+		Volumes    []*Volume      `json:"volumes,omitempty"`
+		Network    Network        `json:"network"`
+		Earthfile  spec.Earthfile `json:"earthfile"`
+		Root       string         `json:"root,omitempty"`
+		WorkingDir string         `json:"working_dir,omitempty"`
 	}
 
 	// Step defines a pipeline step.

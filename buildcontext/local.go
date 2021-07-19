@@ -11,7 +11,6 @@ import (
 	"github.com/drone-runners/drone-runner-docker/util/syncutil/synccache"
 	"github.com/moby/buildkit/client/llb"
 	"github.com/pkg/errors"
-	"path/filepath"
 )
 
 type localResolver struct {
@@ -50,10 +49,10 @@ func (lr *localResolver) resolveLocal(ctx context.Context, ref domain.Reference)
 	}
 	metadata := metadataValue.(*gitutil.GitMetadata)
 	var buildFilePath string
-	target := ref.(domain.Target)
-	if !target.FromArgs {
-		buildFilePath, err = detectBuildFile(ref, filepath.FromSlash(ref.GetLocalPath()))
-	}
+	//target := ref.(domain.Target)
+	//if !target.FromArgs {
+	//	buildFilePath, err = detectBuildFile(ref, filepath.FromSlash(ref.GetLocalPath()))
+	//}
 	if err != nil {
 		return nil, err
 	}
