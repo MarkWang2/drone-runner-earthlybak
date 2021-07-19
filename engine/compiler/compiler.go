@@ -128,7 +128,6 @@ func (c *Compiler) Compile(ctx context.Context, args runtime.CompilerArgs) runti
 	dspec := &engine.Spec{}
 	os := pipeline.Platform.OS
 
-	base, path, full := createWorkspace(pipeline)
 	dspec.Root = tempdir(os)
 	sourcedir := join(os, dspec.Root, "drone", "src")
 	dspec.WorkingDir = sourcedir
@@ -143,11 +142,6 @@ func (c *Compiler) Compile(ctx context.Context, args runtime.CompilerArgs) runti
 		Event:    args.Build.Event,
 		Branch:   args.Build.Target,
 	}
-
-	//rp := spec.Block{}
-	//imageCmd := spec.Command{Name: "FROM", Args: []string{"step.Image"}}
-	//imageSM := spec.Statement{&imageCmd, nil, nil, nil, nil}
-	//rp = append(rp, imageSM)
 
 	// list the global environment variables
 	globals, _ := c.Environ.List(ctx, &provider.Request{
@@ -178,13 +172,8 @@ func (c *Compiler) Compile(ctx context.Context, args runtime.CompilerArgs) runti
 		}),
 	)
 
-	//// create network reference variables
-	//envs["DRONE_DOCKER_NETWORK_ID"] = spec.Network.ID
-
 	// create the workspace variables
-	envs["DRONE_WORKSPACE"] = full
-	envs["DRONE_WORKSPACE_BASE"] = base
-	envs["DRONE_WORKSPACE_PATH"] = path
+	envs["DRONE_WORKSPACE"] = sourcedir
 
 	// create the .netrc environment variables if not
 	// explicitly disabled
@@ -194,7 +183,7 @@ func (c *Compiler) Compile(ctx context.Context, args runtime.CompilerArgs) runti
 
 	// create the clone step
 	if pipeline.Clone.Disable == false {
-		step := createClone(pipeline, full) // need createClone(pipeline)
+		step := createClone(pipeline) // need createClone(pipeline)
 		step.ID = random()
 		step.Envs = environ.Combine(envs, step.Envs)
 		step.WorkingDir = sourcedir
@@ -205,20 +194,14 @@ func (c *Compiler) Compile(ctx context.Context, args runtime.CompilerArgs) runti
 		imageSM := spec.Statement{&imageCmd, nil, nil, nil, nil}
 		rp = append(rp, imageSM)
 
-		workDirCmd := spec.Command{Name: "WORKDIR", Args: []string{sourcedir}} // step.WorkingDir
+		workDirCmd := spec.Command{Name: "WORKDIR", Args: []string{sourcedir}} // todo: handle pass from drone yaml workdir step.WorkingDir
 		workDirSM := spec.Statement{&workDirCmd, nil, nil, nil, nil}
 		rp = append(rp, workDirSM)
 
 		for key, value := range envs {
-			if key == "DRONE_WORKSPACE" {
-				cmd := spec.Command{Name: "ENV", Args: []string{"DRONE_WORKSPACE", "=", sourcedir}}
-				st := spec.Statement{&cmd, nil, nil, nil, nil}
-				rp = append(rp, st)
-			} else {
-				cmd := spec.Command{Name: "ENV", Args: []string{key, "=", value}}
-				st := spec.Statement{&cmd, nil, nil, nil, nil}
-				rp = append(rp, st)
-			}
+			cmd := spec.Command{Name: "ENV", Args: []string{key, "=", value}}
+			st := spec.Statement{&cmd, nil, nil, nil, nil}
+			rp = append(rp, st)
 		}
 
 		epCmd := spec.Command{Name: "ENTRYPOINT", Args: []string{"/usr/local/bin/clone"}}
@@ -230,29 +213,20 @@ func (c *Compiler) Compile(ctx context.Context, args runtime.CompilerArgs) runti
 		saveSt := spec.Statement{&spec.Command{Name: "SAVE ARTIFACT", Args: []string{".", "AS", "LOCAL", sourcedir}}, nil, nil, nil, nil}
 		rp = append(rp, saveSt)
 
-		//"ENTRYPOINT"
 		target := spec.Target{step.Name, rp, nil}
 		targets = append(targets, target)
 		step.Target = target
-		//dstep := &engine.Step{
-		//	Name:   step.Name,
-		//	Target: target,
-		//}
-		//setupWorkdir(step, dstep, full)
-		//
-		//if !step.When.Match(match) {
-		//	dstep.RunPolicy = runtime.RunNever
-		//}
 		dspec.Steps = append(dspec.Steps, step)
 	}
-	//
-	//step := createClone(pipeline, full)
-	//dspec.Steps = append(dspec.Steps, step)
 	for _, step := range pipeline.Steps {
 		rp := spec.Block{}
 		imageCmd := spec.Command{Name: "FROM", Args: []string{step.Image}}
 		imageSM := spec.Statement{&imageCmd, nil, nil, nil, nil}
 		rp = append(rp, imageSM)
+
+		workDirCmd := spec.Command{Name: "WORKDIR", Args: []string{sourcedir}} // step.WorkingDir
+		workDirSM := spec.Statement{&workDirCmd, nil, nil, nil, nil}
+		rp = append(rp, workDirSM)
 
 		for key, value := range envs {
 			fmt.Print(key)
@@ -262,10 +236,6 @@ func (c *Compiler) Compile(ctx context.Context, args runtime.CompilerArgs) runti
 			st := spec.Statement{&cmd, nil, nil, nil, nil}
 			rp = append(rp, st)
 		}
-
-		//workDirCmd := spec.Command{Name: "WORKDIR", Args: []string{"/drone-runner-earthly"}} // step.WorkingDir
-		//workDirSM := spec.Statement{&workDirCmd, nil, nil, nil, nil}
-		//rp = append(rp, workDirSM)
 
 		// done yaml add copy make drone use as dockerfile way.
 		cpCmd := spec.Command{Name: "COPY", Args: []string{".", "./"}}
@@ -282,7 +252,6 @@ func (c *Compiler) Compile(ctx context.Context, args runtime.CompilerArgs) runti
 			Name:   step.Name,
 			Target: target,
 		}
-		setupWorkdir(step, dstep, full)
 
 		if !step.When.Match(match) {
 			dstep.RunPolicy = runtime.RunNever
@@ -457,7 +426,7 @@ func (c *Compiler) Compile2(ctx context.Context, args runtime.CompilerArgs) runt
 
 	// create the clone step
 	if pipeline.Clone.Disable == false {
-		step := createClone(pipeline, full) // need createClone(pipeline)
+		step := createClone(pipeline) // need createClone(pipeline)
 		step.ID = random()
 		step.Envs = environ.Combine(envs, step.Envs)
 		step.WorkingDir = full
