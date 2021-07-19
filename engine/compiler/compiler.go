@@ -426,7 +426,7 @@ func (c *Compiler) Compile2(ctx context.Context, args runtime.CompilerArgs) runt
 
 	// create the clone step
 	if pipeline.Clone.Disable == false {
-		step := createClone(pipeline) // need createClone(pipeline)
+		step := createClone(pipeline)
 		step.ID = random()
 		step.Envs = environ.Combine(envs, step.Envs)
 		step.WorkingDir = full

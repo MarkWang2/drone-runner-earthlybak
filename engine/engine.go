@@ -17,6 +17,7 @@ import (
 	"github.com/drone/runner-go/registry/auths"
 	"io"
 	"io/ioutil"
+	"os"
 	"os/exec"
 
 	"github.com/docker/docker/api/types"
@@ -124,47 +125,47 @@ func (e *Docker) Setup(ctx context.Context, specv runtime.Spec) error {
 }
 
 // Destroy the pipeline environment.
-// todo: remove working dir
 func (e *Docker) Destroy(ctx context.Context, specv runtime.Spec) error {
 	spec := specv.(*Spec)
+	err := os.RemoveAll(spec.Root)
 
-	removeOpts := types.ContainerRemoveOptions{
-		Force:         true,
-		RemoveLinks:   false,
-		RemoveVolumes: true,
-	}
-
-	// stop all containers
-	for _, step := range append(spec.Steps, spec.Internal...) {
-		e.client.ContainerKill(ctx, step.ID, "9")
-	}
-
-	// cleanup all containers
-	for _, step := range append(spec.Steps, spec.Internal...) {
-		e.client.ContainerRemove(ctx, step.ID, removeOpts)
-	}
-
-	// cleanup all volumes
-	for _, vol := range spec.Volumes {
-		if vol.EmptyDir == nil {
-			continue
-		}
-		// tempfs volumes do not have a volume entry,
-		// and therefore do not require removal.
-		if vol.EmptyDir.Medium == "memory" {
-			continue
-		}
-		e.client.VolumeRemove(ctx, vol.EmptyDir.ID, true)
-	}
-
-	// cleanup the network
-	e.client.NetworkRemove(ctx, spec.Network.ID)
-
-	// notice that we never collect or return any errors.
-	// this is because we silently ignore cleanup failures
-	// and instead ask the system admin to periodically run
-	// `docker prune` commands.
-	return nil
+	//removeOpts := types.ContainerRemoveOptions{
+	//	Force:         true,
+	//	RemoveLinks:   false,
+	//	RemoveVolumes: true,
+	//}
+	//
+	//// stop all containers
+	//for _, step := range append(spec.Steps, spec.Internal...) {
+	//	e.client.ContainerKill(ctx, step.ID, "9")
+	//}
+	//
+	//// cleanup all containers
+	//for _, step := range append(spec.Steps, spec.Internal...) {
+	//	e.client.ContainerRemove(ctx, step.ID, removeOpts)
+	//}
+	//
+	//// cleanup all volumes
+	//for _, vol := range spec.Volumes {
+	//	if vol.EmptyDir == nil {
+	//		continue
+	//	}
+	//	// tempfs volumes do not have a volume entry,
+	//	// and therefore do not require removal.
+	//	if vol.EmptyDir.Medium == "memory" {
+	//		continue
+	//	}
+	//	e.client.VolumeRemove(ctx, vol.EmptyDir.ID, true)
+	//}
+	//
+	//// cleanup the network
+	//e.client.NetworkRemove(ctx, spec.Network.ID)
+	//
+	//// notice that we never collect or return any errors.
+	//// this is because we silently ignore cleanup failures
+	//// and instead ask the system admin to periodically run
+	//// `docker prune` commands.
+	return err
 }
 
 // Run runs the pipeline step.
