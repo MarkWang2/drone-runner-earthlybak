@@ -17,6 +17,7 @@ import (
 	"github.com/drone/runner-go/pipeline/runtime"
 	"github.com/drone/runner-go/registry"
 	"github.com/drone/runner-go/secret"
+	"strings"
 )
 
 // random generator function
@@ -182,8 +183,9 @@ func (c *Compiler) Compile(ctx context.Context, args runtime.CompilerArgs) runti
 		rp = append(rp, cpSM)
 
 		for _, cmd := range step.Commands {
-			envSt := spec.Statement{&spec.Command{Name: "RUN", Args: []string{cmd}}, nil, nil, nil, nil}
-			rp = append(rp, envSt)
+			cmsStr := strings.Fields(cmd)
+			runSt := spec.Statement{&spec.Command{Name: "RUN", Args: cmsStr}, nil, nil, nil, nil}
+			rp = append(rp, runSt)
 		}
 
 		target := spec.Target{step.Name, rp, nil}

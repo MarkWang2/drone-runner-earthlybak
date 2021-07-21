@@ -1,6 +1,7 @@
-# drone-runner-docker
+# drone-runner-earthly
 
-The `docker` runner executes pipelines inside Docker containers. This runner is intended for linux workloads that are suitable for execution inside containers. This requires Drone server `1.6.0` or higher.
+The `earthly` runner executes pipelines use earthly [https://github.com/earthly/earthly]. This runner is intended for linux workloads that are suitable for execution inside containers.
+This requires Drone server `1.6.0` or higher.
 
 Documentation:<br/>
 https://docs.drone.io/runner/docker/overview/
