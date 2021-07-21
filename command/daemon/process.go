@@ -73,19 +73,8 @@ func (c *processCommand) run(*kingpin.ParseContext) error {
 		Match:    nil,
 		Compiler: &compiler.Compiler{
 			Clone:          config.Runner.Clone,
-			Privileged:     append(config.Runner.Privileged, compiler.Privileged...),
-			Networks:       config.Runner.Networks,
 			NetrcCloneOnly: config.Netrc.CloneOnly,
 			Volumes:        config.Runner.Volumes,
-			Resources: compiler.Resources{
-				Memory:     config.Resources.Memory,
-				MemorySwap: config.Resources.MemorySwap,
-				CPUQuota:   config.Resources.CPUQuota,
-				CPUPeriod:  config.Resources.CPUPeriod,
-				CPUShares:  config.Resources.CPUShares,
-				CPUSet:     config.Resources.CPUSet,
-				ShmSize:    config.Resources.ShmSize,
-			},
 			Environ: provider.Combine(
 				provider.Static(config.Runner.Environ),
 				provider.External(

@@ -13,6 +13,7 @@ var (
 	_ manifest.PlatformResource  = (*Pipeline)(nil)
 )
 
+// todo: 0.8 ver yaml not support Type = "earthly"
 // Defines the Resource Kind and Type.
 const (
 	Kind = "pipeline"
